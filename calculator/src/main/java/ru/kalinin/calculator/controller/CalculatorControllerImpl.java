@@ -7,9 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.kalinin.calculator.service.CalculatorService;
-import ru.kalinin.calculator.service.CalculatorServiceImpl;
 
-import lombok.RequiredArgsConstructor;
 import ru.kalinin.common.dto.*;
 
 import java.util.List;
