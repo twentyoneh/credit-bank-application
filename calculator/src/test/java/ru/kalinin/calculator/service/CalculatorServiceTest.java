@@ -43,7 +43,7 @@ public class CalculatorServiceTest {
         dto.setTerm(12);
         dto.setBirthdate(LocalDate.now().minusYears(30));
         EmploymentDto emp = new EmploymentDto();
-        emp.setEmploymentStatus(EmploymentStatus.EMPLOYED);
+        emp.setEmploymentStatus(EmploymentStatus.SELF_EMPLOYED);
         emp.setEmployerINN("1234567890");
         emp.setSalary(new BigDecimal("50000"));
         emp.setPosition(Position.MID_MANAGER);
@@ -71,6 +71,70 @@ public class CalculatorServiceTest {
         // Проверяет, что при некорректном (не латинском) имени выбрасывается исключение
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setFirstName("Иван"); // не латиница
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidLastName_throwsException() {
+        // Проверяет, что при некорректном (не латинском) имени выбрасывается исключение
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setLastName("Иванов"); // не латиница
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidMiddleName_throwsException() {
+        // Проверяет, что при некорректном (не латинском) имени выбрасывается исключение
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setMiddleName("Иванович"); // не латиница
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidAmount_throwsException() {
+        // Проверяет, что при некорректной сумме кредита (менее 20000)
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setAmount(new BigDecimal(10000)); // 10000 < 20000
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidTerm_throwsException() {
+        // Проверяет, что при некорректном сроке кредита (менее 6 месяцев)
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setTerm(2); // 2 месяца на кредит
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidBirthdate_throwsException() {
+        // Проверяет, что при некорректном возрасте (менее 18 лет)
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setBirthdate(java.time.LocalDate.now().minusYears(17)); // 17 лет
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidEmail_throwsException() {
+        // Проверяет, что при некорректном Email
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setEmail("АБВ@яндекс.ру");
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidPassportSeries_throwsException() {
+        // Проверяет, что при некорректной серии паспорта
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setPassportSeries("1234567890");
+        assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
+    }
+
+    @Test
+    void calculateOffers_invalidPassportNumber_throwsException() {
+        // Проверяет, что при некорректной номера паспорта
+        LoanStatementRequestDto request = getValidLoanRequest();
+        request.setPassportNumber("1234567890");
         assertThrows(IllegalArgumentException.class, () -> service.calculateOffers(request));
     }
 
