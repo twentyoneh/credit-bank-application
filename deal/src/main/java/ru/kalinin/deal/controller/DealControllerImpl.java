@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.kalinin.common.dto.LoanOfferDto;
 import ru.kalinin.common.dto.LoanStatementRequestDto;
 import ru.kalinin.deal.config.CommonProps;
+import ru.kalinin.deal.services.DealService;
 import ru.kalinin.deal.util.RestUtil;
 
 import java.beans.Statement;
+import java.util.List;
 
 @Slf4j
 @RestController

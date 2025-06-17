@@ -1,72 +1,65 @@
 package ru.kalinin.deal.models;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
+import org.hibernate.type.SqlTypes;
 import ru.kalinin.deal.models.enums.Gender;
 import ru.kalinin.deal.models.enums.MaritalStatus;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.util.UUID;
 
-@Getter
-@Setter
-@Builder
+@Entity
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
-@Entity
-@Table(name = "client")
-@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
+@Builder
 public class Client {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "client_id", nullable = false)
-    private UUID clientId;
+    private UUID id;  // PK
 
-    @NotNull
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @NotNull
     @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @NotNull
     @Column(name = "middle_name", nullable = false)
     private String middleName;
 
-    @NotNull
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
-    @NotNull
     @Column(name = "email", nullable = false)
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender")
+    @Column(name = "gender", nullable = false)
     private Gender gender;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "marital_status")
+    @Column(name = "marital_status",nullable = false)
     private MaritalStatus maritalStatus;
 
-    @Column(name = "dependent_amount")
+    @Column(name = "dependent_amount", nullable = false)
     private Integer dependentAmount;
 
-    @Type(type = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "passport", columnDefinition = "jsonb")
-    private Passport passport;
+    private Passport passportId; //FK
 
-    @Type(type = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "employment", columnDefinition = "jsonb")
-    private Employment employment;
+    private Employment employmentId;    //FK
 
-    @Column(name = "account_number")
+    @Column(name = "account_number", nullable = false)
     private String accountNumber;
+
 }

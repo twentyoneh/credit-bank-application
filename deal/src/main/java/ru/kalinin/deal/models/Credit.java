@@ -1,39 +1,51 @@
 package ru.kalinin.deal.models;
 
-import lombok.*;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
-import ru.petrov.models.enums.CreditStatus;
+import ru.kalinin.deal.models.enums.CreditStatus;
 
-import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
-@Getter
-@Setter
-@Builder
+@Entity
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
-@Entity
+@Builder
 public class Credit {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "credit_id", nullable = false)
-    private UUID creditId;
+    private UUID id;
+
+    @Column(name = "amount", nullable = false)
+    private BigDecimal amount;
+    @Column(name = "term", nullable = false)
     private Integer term;
+    @Column(name = "monthly_payment", nullable = false)
     private BigDecimal monthlyPayment;
+
+    @Column(nullable = false)
     private BigDecimal rate;
+
+    @Column(nullable = false)
     private BigDecimal psk;
 
     @Type(type = "jsonb")
     @Column(name = "payment_schedule", columnDefinition = "jsonb")
-    private List<PaymentScheduleElement> paymentSchedule;
+    private  paymentSchedule;
+
+    @Column(name = "insurance_enabled", nullable = false)
     private Boolean insuranceEnabled;
+
+    @Column(name = "salary_client", nullable = false)
     private Boolean salaryClient;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "credit_status")
+    @Column(name = "credit_status", nullable = false)
     private CreditStatus creditStatus;
-
 }
