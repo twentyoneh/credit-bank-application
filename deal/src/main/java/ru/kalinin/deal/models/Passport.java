@@ -17,12 +17,16 @@ public class Passport {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "passport_uuid", nullable = false)
     private UUID passportId;
+
     @Column(name = "series", nullable = false)
     private String series;
+
     @Column(name = "number", nullable = false)
     private String number;
+
     @Column(name = "issue_branch", nullable = false)
     private String issueBranch;
+
     @Column(name = "issue_date", nullable = false)
     private LocalDate issueDate;
 }

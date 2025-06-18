@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 import ru.kalinin.deal.models.enums.CreditStatus;
 
 import java.math.BigDecimal;
@@ -24,8 +26,10 @@ public class Credit {
 
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
+
     @Column(name = "term", nullable = false)
     private Integer term;
+
     @Column(name = "monthly_payment", nullable = false)
     private BigDecimal monthlyPayment;
 
@@ -35,9 +39,9 @@ public class Credit {
     @Column(nullable = false)
     private BigDecimal psk;
 
-    @Type(type = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payment_schedule", columnDefinition = "jsonb")
-    private  paymentSchedule;
+    private PaymentSchedule paymentSchedule;
 
     @Column(name = "insurance_enabled", nullable = false)
     private Boolean insuranceEnabled;

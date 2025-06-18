@@ -27,6 +27,7 @@ public class Employment {
 
     @Column(name = "employer_inn", nullable = false)
     private String employerInn;
+
     @Column(name = "salary", nullable = false)
     private BigDecimal salary;
 
@@ -36,6 +37,7 @@ public class Employment {
 
     @Column(name = "work_experience_total", nullable = false)
     private Integer workExperienceTotal;
+
     @Column(name = "work_experience_current", nullable = false)
     private Integer workExperienceCurrent;
 }

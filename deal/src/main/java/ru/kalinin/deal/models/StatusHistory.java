@@ -18,8 +18,10 @@ import java.time.LocalDateTime;
 public class StatusHistory {
     @Column(name = "status", nullable = false)
     private String status;
+
     @Column(name = "time", nullable = false)
     private LocalDateTime time;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "change_type", nullable = false)
     private ChangeType changeType;
