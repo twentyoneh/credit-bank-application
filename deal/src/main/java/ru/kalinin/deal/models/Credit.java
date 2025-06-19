@@ -8,9 +8,12 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
+import org.hibernate.validator.constraints.CodePointLength;
+import ru.kalinin.common.dto.PaymentScheduleElementDto;
 import ru.kalinin.deal.models.enums.CreditStatus;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -41,7 +44,7 @@ public class Credit {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payment_schedule", columnDefinition = "jsonb")
-    private PaymentSchedule paymentSchedule;
+    private List<PaymentScheduleElementDto> paymentSchedule;
 
     @Column(name = "insurance_enabled", nullable = false)
     private Boolean insuranceEnabled;

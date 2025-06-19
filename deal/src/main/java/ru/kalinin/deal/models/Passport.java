@@ -16,7 +16,7 @@ public class Passport {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "passport_uuid", nullable = false)
-    private UUID passportId;
+    private UUID id;
 
     @Column(name = "series", nullable = false)
     private String series;
@@ -24,9 +24,9 @@ public class Passport {
     @Column(name = "number", nullable = false)
     private String number;
 
-    @Column(name = "issue_branch", nullable = false)
+    @Column(name = "issue_branch", nullable = true)
     private String issueBranch;
 
-    @Column(name = "issue_date", nullable = false)
+    @Column(name = "issue_date", nullable = true)
     private LocalDate issueDate;
 }

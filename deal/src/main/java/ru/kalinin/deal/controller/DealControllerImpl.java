@@ -9,11 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.kalinin.common.dto.FinishRegistrationRequestDto;
 import ru.kalinin.common.dto.LoanOfferDto;
 import ru.kalinin.common.dto.LoanStatementRequestDto;
-import ru.kalinin.deal.config.CommonProps;
 import ru.kalinin.deal.services.DealService;
-import ru.kalinin.deal.util.RestUtil;
 
-import java.beans.Statement;
 import java.util.List;
 
 @Slf4j
@@ -21,7 +18,7 @@ import java.util.List;
 @RequestMapping(path = "/deal", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class DealControllerImpl implements DealController {
-    private final CommonProps commonProps;  // url калькулятора
+//    private final CommonProps commonProps;  // url калькулятора
     private final DealService dealService;
 //    private final RestUtil restUtil;    //для общения с другими MS
 
@@ -33,12 +30,13 @@ public class DealControllerImpl implements DealController {
 
         log.info("POST request {} path {}", requestDto, "/deal/statement");
 
-        Statement statement = dealService.saveStatement(requestDto);
+        return  ResponseEntity.ok(dealService.createStatement(requestDto));
     }
 
     @Override
     @PostMapping("/offer/select")
     public ResponseEntity<Void> selectStatement(LoanOfferDto requestDto) {
+        dealService.selectStatement(requestDto);
         return null;
     }
 
@@ -47,6 +45,7 @@ public class DealControllerImpl implements DealController {
     public ResponseEntity<Void> finishRegistrationAndCalculateCredit(
             @PathVariable String statementId,
             @RequestBody FinishRegistrationRequestDto requestDto) {
+        dealService.finishRegistrationAndCalculateCredit(statementId, requestDto);
         return null;
     }
 

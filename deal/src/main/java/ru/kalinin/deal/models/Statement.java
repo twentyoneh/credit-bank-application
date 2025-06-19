@@ -6,11 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
+import ru.kalinin.common.dto.LoanOfferDto;
 import ru.kalinin.deal.models.enums.ApplicationStatus;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -24,22 +26,24 @@ public class Statement {
     @Column(name = "statement_id", nullable = false)
     private UUID id;
 
-    @Column(name = "client_id", nullable = false)
-    private UUID clientId; //FK1
+    @OneToOne(optional = false)
+    @Column(name = "client_id")
+    private Client client; //FK1
 
-    @Column(name = "credit_id", nullable = false)
-    private UUID creditId;
+    @OneToOne
+    @Column(name = "credit_id")
+    private Credit  credit;  //FK1
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private ApplicationStatus status;
 
-    @Column(name = "creation_date", nullable = false)
+    @Column(name = "creation_date")
     private LocalDateTime creationDate;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "applied_offer", columnDefinition = "jsonb")
-    private AppliedOffer appliedOffer;
+    private LoanOfferDto appliedOffer;
 
     @Column(name = "sign_date")
     private LocalDateTime signDate;
@@ -49,5 +53,5 @@ public class Statement {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "status_history", columnDefinition = "jsonb")
-    private StatusHistory statusHistory;
+    private List<StatusHistory> statusHistory = new ArrayList<>();
 }

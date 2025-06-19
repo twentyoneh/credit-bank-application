@@ -6,11 +6,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 import ru.kalinin.deal.models.enums.Gender;
 import ru.kalinin.deal.models.enums.MaritalStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -41,25 +41,26 @@ public class Client {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender", nullable = false)
+    @Column(name = "gender", nullable = true)
     private Gender gender;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "marital_status",nullable = false)
+    @Column(name = "marital_status",nullable = true)
     private MaritalStatus maritalStatus;
 
     @Column(name = "dependent_amount", nullable = false)
-    private Integer dependentAmount;
+    private BigDecimal dependentAmount;
+
+    @OneToOne
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "passport_id", columnDefinition = "jsonb")
+    private Passport passport; //FK
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "passport", columnDefinition = "jsonb")
-    private Passport passportId; //FK
+    @Column(name = "employment_id", columnDefinition = "jsonb")
+    private UUID employmentId;    //FK
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "employment", columnDefinition = "jsonb")
-    private Employment employmentId;    //FK
-
-    @Column(name = "account_number", nullable = false)
+    @Column(name = "account_number", nullable = true)
     private String accountNumber;
 
 }
