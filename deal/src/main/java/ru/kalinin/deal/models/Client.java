@@ -51,9 +51,8 @@ public class Client {
     @Column(name = "dependent_amount", nullable = false)
     private BigDecimal dependentAmount;
 
-    @OneToOne
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "passport_id", columnDefinition = "jsonb")
+    @JoinColumn(name = "passport_id", columnDefinition = "jsonb")
     private Passport passport; //FK
 
     @JdbcTypeCode(SqlTypes.JSON)

@@ -217,11 +217,11 @@ public class CalculatorServiceImpl implements CalculatorService {
      */
     private void preScoring(LoanStatementRequestDto request) {
         // Проверка имени (только латинские буквы, 2-30 символов)
-        if (!request.getFirstName().matches("^[A-Za-z]{2,30}$")) {
+        if (request.getFirstName() == null || !request.getFirstName().matches("^[A-Za-z]{2,30}$")) {
             throw new IllegalArgumentException("Имя должно содержать от 2 до 30 латинских букв");
         }
         // Проверка фамилии (только латинские буквы, 2-30 символов)
-        if (!request.getLastName().matches("^[A-Za-z]{2,30}$")) {
+        if (request.getFirstName() == null || !request.getLastName().matches("^[A-Za-z]{2,30}$")) {
             throw new IllegalArgumentException("Фамилия должна содержать от 2 до 30 латинских букв");
         }
         // Проверка отчества (если указано, только латинские буквы, 2-30 символов)

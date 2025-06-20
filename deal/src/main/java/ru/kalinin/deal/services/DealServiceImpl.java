@@ -1,5 +1,7 @@
 package ru.kalinin.deal.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -55,13 +57,24 @@ public class DealServiceImpl implements DealService {
         // Отправка POST запроса на /calculator/offers МС калькулятор
         List<LoanOfferDto> offers;
         RestClient restClient = RestClient.builder()
-                .baseUrl("http://calculator:8080")
+                .baseUrl("http://localhost:8080")
+                .defaultHeader("Content-Type", "application/json")
                 .build();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        String json = new String();
+        try {
+            json = objectMapper.writeValueAsString(request);
+            log.info("Сериализованный объект LoanStatementRequestDto: {}", json);
+        } catch (Exception e) {
+            log.error("Ошибка сериализации объекта LoanStatementRequestDto: {}", e.getMessage());
+        }
 
         try {
             offers = restClient.post()
-                    .uri("/offers")
-                    .body(request)
+                    .uri("/calculator/offers")
+                    .body(json)
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<LoanOfferDto>>() {
                     });
@@ -71,11 +84,11 @@ public class DealServiceImpl implements DealService {
             }
         }
         catch (Exception e){
-            log.error("Ошибка при вызове микросервиса калькулятора /offers: {}", e.getMessage());
+            log.error("Ошибка при вызове микросервиса калькулятора /calculator/offers: {}", e.getMessage());
             throw new RuntimeException("Не удалось получить ответ от микросервиса калькулятора", e);
         }
 
-
+        log.info("Успешно полученны оферы");
         for (LoanOfferDto offer : offers) {
             offer.setStatementId(statement.getId());
         }
@@ -84,8 +97,15 @@ public class DealServiceImpl implements DealService {
 
     @Override
     public void selectStatement(LoanOfferDto request) {
+        log.info("Получен запрос на выбор предложения: {}", request);
+
         Statement statement = statementRepository.findById(request.getStatementId())
-                .orElseThrow(() -> new RuntimeException("Заявка не найдена по id: " + request.getStatementId()));
+                .orElseThrow(() -> {
+                    log.error("Заявка не найдена по id: {}", request.getStatementId());
+                    return new RuntimeException("Заявка не найдена по id: " + request.getStatementId());
+                });
+
+        log.info("Найдена заявка: {}", statement.getId());
 
         StatusHistory statusHistory = StatusHistory.builder()
                 .status("LoanOffer " + request + "was select")
@@ -97,7 +117,16 @@ public class DealServiceImpl implements DealService {
         statement.setStatus(ApplicationStatus.APPROVED);
         statement.setAppliedOffer(request);
 
-        statementRepository.save(statement);
+        try {
+            statementRepository.save(statement);
+            statementRepository.flush(); // Гарантирует, что изменения попадут в БД немедленно
+
+            log.info("Заявка {} успешно обновлена: статус {}, выбрано предложение {}",
+                    statement.getId(), statement.getStatus(), request);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении заявки {} в базу данных: {}", statement.getId(), e.getMessage(), e);
+            throw new RuntimeException("Ошибка при сохранении заявки в базу данных", e);
+        }
     }
 
     @Override
@@ -125,13 +154,23 @@ public class DealServiceImpl implements DealService {
 
         CreditDto creditDto;
         RestClient restClient = RestClient.builder()
-                .baseUrl("http://calculator:8080")
+                .baseUrl("http://localhost:8080")
                 .build();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        String json = new String();
+        try {
+            json = objectMapper.writeValueAsString(scoringDataDto);
+            log.info("Сериализованный объект scoringDataDto: {}", json);
+        } catch (Exception e) {
+            log.error("Ошибка сериализации объекта scoringDataDto: {}", e.getMessage());
+        }
 
         try {
             creditDto = restClient.post()
-                    .uri("/calc")
-                    .body(scoringDataDto)
+                    .uri("/calculator/calc")
+                    .body(json)
                     .retrieve()
                     .body(new ParameterizedTypeReference<CreditDto>() {
                     });

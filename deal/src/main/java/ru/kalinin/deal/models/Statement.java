@@ -27,11 +27,11 @@ public class Statement {
     private UUID id;
 
     @OneToOne(optional = false)
-    @Column(name = "client_id")
+    @JoinColumn(name = "client_id")
     private Client client; //FK1
 
     @OneToOne
-    @Column(name = "credit_id")
+    @JoinColumn(name = "credit_id")
     private Credit  credit;  //FK1
 
     @Enumerated(EnumType.STRING)

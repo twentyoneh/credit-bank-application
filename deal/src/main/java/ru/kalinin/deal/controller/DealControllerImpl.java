@@ -18,9 +18,7 @@ import java.util.List;
 @RequestMapping(path = "/deal", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class DealControllerImpl implements DealController {
-//    private final CommonProps commonProps;  // url калькулятора
     private final DealService dealService;
-//    private final RestUtil restUtil;    //для общения с другими MS
 
     @Override
     @PostMapping("/statement")
@@ -35,7 +33,9 @@ public class DealControllerImpl implements DealController {
 
     @Override
     @PostMapping("/offer/select")
-    public ResponseEntity<Void> selectStatement(LoanOfferDto requestDto) {
+    public ResponseEntity<Void> selectStatement(
+            @RequestBody @Valid LoanOfferDto requestDto) {
+        log.info("POST request {} path {}", requestDto, "/offer/select");
         dealService.selectStatement(requestDto);
         return null;
     }
@@ -45,6 +45,7 @@ public class DealControllerImpl implements DealController {
     public ResponseEntity<Void> finishRegistrationAndCalculateCredit(
             @PathVariable String statementId,
             @RequestBody FinishRegistrationRequestDto requestDto) {
+        log.info("POST request {} statementId {} path {}", requestDto, statementId, "/calculate/{statementId}");
         dealService.finishRegistrationAndCalculateCredit(statementId, requestDto);
         return null;
     }
