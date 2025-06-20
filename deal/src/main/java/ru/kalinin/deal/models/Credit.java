@@ -39,7 +39,7 @@ public class Credit {
     @Column(nullable = false)
     private BigDecimal rate;
 
-    @Column(nullable = false)
+    @Column(name= "psk")
     private BigDecimal psk;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -53,6 +53,6 @@ public class Credit {
     private Boolean salaryClient;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "credit_status", nullable = false)
+    @Column(name = "credit_status")
     private CreditStatus creditStatus;
 }

@@ -30,9 +30,6 @@ public class DealServiceImpl implements DealService {
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
 
-//    private final ModelMapper mapper;
-//    private final MessagingService messagingService;
-
     @Override
     public List<LoanOfferDto> createStatement(LoanStatementRequestDto request) {
         Client client = new Client();
@@ -45,8 +42,11 @@ public class DealServiceImpl implements DealService {
         Passport passport = Passport.builder()
                 .series(request.getPassportSeries())
                 .number(request.getPassportNumber())
+//                .issueBranch(request.getPassportIssueBranch())
+//                .issueDate(request.getPassportIssueDate());
                 .build();
         client.setPassport(passport);
+        client.setAccountNumber(UUID.randomUUID().toString());
 
         clientRepository.save(client);
 
@@ -117,6 +117,26 @@ public class DealServiceImpl implements DealService {
         statement.setStatus(ApplicationStatus.APPROVED);
         statement.setAppliedOffer(request);
 
+        Credit credit = Credit.builder()
+                .amount(request.getTotalAmount())
+                .term(request.getTerm())
+                .monthlyPayment(request.getMonthlyPayment())
+                .rate(request.getRate())
+                .insuranceEnabled(request.getIsInsuranceEnabled())
+                .salaryClient(request.getIsSalaryClient())
+                .build();
+        try {
+            creditRepository.save(credit);
+            creditRepository.flush(); // Гарантирует, что изменения попадут в БД немедленно
+
+            log.info("Credit успешно сохранен: {}", credit);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении Credit {} в базу данных: {}", credit.getId(), e.getMessage(), e);
+            throw new RuntimeException("Ошибка при сохранении Credit в базу данных", e);
+        }
+
+        statement.setCredit(credit);
+
         try {
             statementRepository.save(statement);
             statementRepository.flush(); // Гарантирует, что изменения попадут в БД немедленно
@@ -133,10 +153,12 @@ public class DealServiceImpl implements DealService {
     public void finishRegistrationAndCalculateCredit(String statementId, FinishRegistrationRequestDto requestDto) {
         Statement statement = statementRepository.findById(UUID.fromString(statementId))
                 .orElseThrow(() -> new RuntimeException("Заявка не найдена по id: " + statementId));
+        log.info("Найдена заявка: {}", statementId);
 
         Client client = statement.getClient();
         ScoringDataDto scoringDataDto = new ScoringDataDto();
         scoringDataDto.setAmount(BigDecimal.valueOf(requestDto.getDependentAmount()));
+        scoringDataDto.setTerm(statement.getCredit().getTerm());
         scoringDataDto.setFirstName(client.getFirstName());
         scoringDataDto.setLastName(client.getLastName());
         scoringDataDto.setMiddleName(client.getMiddleName());
@@ -144,17 +166,21 @@ public class DealServiceImpl implements DealService {
         scoringDataDto.setBirthdate(client.getBirthDate());
         scoringDataDto.setPassportSeries(client.getPassport().getSeries());
         scoringDataDto.setPassportNumber(client.getPassport().getNumber());
-        scoringDataDto.setPassportIssueDate(client.getPassport().getIssueDate());
-        scoringDataDto.setPassportIssueBranch(client.getPassport().getIssueBranch());
+        scoringDataDto.setPassportIssueDate(requestDto.getPassportIssueDate());
+        scoringDataDto.setPassportIssueBranch(requestDto.getPassportIssueBrach());
         scoringDataDto.setMaritalStatus(requestDto.getMaritalStatus());
         scoringDataDto.setDependentAmount(requestDto.getDependentAmount());
         scoringDataDto.setEmployment(requestDto.getEmployment());
         scoringDataDto.setAccountNumber(client.getAccountNumber());
+        scoringDataDto.setIsInsuranceEnabled(statement.getCredit().getInsuranceEnabled());
+        scoringDataDto.setIsSalaryClient(statement.getCredit().getSalaryClient());
 
+        log.info("Создана ScoringDto: {}", scoringDataDto);
 
         CreditDto creditDto;
         RestClient restClient = RestClient.builder()
                 .baseUrl("http://localhost:8080")
+                .defaultHeader("Content-Type", "application/json")
                 .build();
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -162,9 +188,9 @@ public class DealServiceImpl implements DealService {
         String json = new String();
         try {
             json = objectMapper.writeValueAsString(scoringDataDto);
-            log.info("Сериализованный объект scoringDataDto: {}", json);
+            log.info("Сериализованный объект ScoringDataDto: {}", json);
         } catch (Exception e) {
-            log.error("Ошибка сериализации объекта scoringDataDto: {}", e.getMessage());
+            log.error("Ошибка сериализации объекта ScoringDataDto: {}", e.getMessage());
         }
 
         try {
@@ -184,27 +210,43 @@ public class DealServiceImpl implements DealService {
             throw new RuntimeException("Не удалось получить ответ от микросервиса калькулятора", e);
         }
 
-        Credit finalCredit = Credit.builder()
-                .amount(creditDto.getAmount())
-                .term(creditDto.getTerm())
-                .monthlyPayment(creditDto.getMonthlyPayment())
-                .rate(creditDto.getRate())
-                .paymentSchedule(creditDto.getPaymentSchedule())
-                .insuranceEnabled(creditDto.getIsInsuranceEnabled())
-                .salaryClient(creditDto.getIsSalaryClient())
-                .creditStatus(CreditStatus.CALCULATED)
-                .build();
+        try {
+            log.info("Создание финального кредита на основе CreditDto: {}", creditDto);
+            Credit finalCredit = Credit.builder()
+                    .amount(creditDto.getAmount())
+                    .term(creditDto.getTerm())
+                    .monthlyPayment(creditDto.getMonthlyPayment())
+                    .rate(creditDto.getRate())
+                    .paymentSchedule(creditDto.getPaymentSchedule())
+                    .insuranceEnabled(creditDto.getIsInsuranceEnabled())
+                    .salaryClient(creditDto.getIsSalaryClient())
+                    .creditStatus(CreditStatus.CALCULATED)
+                    .build();
 
-        creditRepository.save(finalCredit);
+            creditRepository.save(finalCredit);
+            statementRepository.flush();
+            log.info("Финальный кредит успешно сохранён: {}", finalCredit);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении финального кредита: {}", e.getMessage(), e);
+            throw new RuntimeException("Ошибка при сохранении финального кредита", e);
+        }
 
-        StatusHistory statusHistory = StatusHistory.builder()
-                .status("FinishRegistration " + requestDto + "was select")
-                .time(LocalDateTime.now())
-                .changeType(ChangeType.AUTOMATIC)
-                .build();
-        statement.setStatusHistory(List.of(statusHistory));
+        try {
+            StatusHistory statusHistory = StatusHistory.builder()
+                    .status("FinishRegistration " + requestDto + "was select")
+                    .time(LocalDateTime.now())
+                    .changeType(ChangeType.AUTOMATIC)
+                    .build();
+            statement.setStatusHistory(List.of(statusHistory));
+            log.info("История статусов обновлена для заявки {}: {}", statement.getId(), statusHistory);
 
-        statementRepository.save(statement);
+            statementRepository.save(statement);
+            statementRepository.flush();
+            log.info("Заявка {} успешно обновлена после завершения регистрации", statement.getId());
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении заявки {}: {}", statement.getId(), e.getMessage(), e);
+            throw new RuntimeException("Ошибка при обновлении заявки после завершения регистрации", e);
+        }
     }
 
 

@@ -6,10 +6,10 @@
   "passportIssueDate": "2015-06-15",
   "passportIssueBrach": "770-001",
   "employment": {
-    "employmentStatus": "EMPLOYED",
+    "status": "EMPLOYED",
     "employerINN": "7707083893",
     "salary": 120000.00,
-    "position": "MIDDLE_MANAGER",
+    "position": "MID_MANAGER",
     "workExperienceTotal": 84,
     "workExperienceCurrent": 24
   },
