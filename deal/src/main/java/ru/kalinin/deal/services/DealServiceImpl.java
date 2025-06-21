@@ -125,6 +125,8 @@ public class DealServiceImpl implements DealService {
                 .insuranceEnabled(request.getIsInsuranceEnabled())
                 .salaryClient(request.getIsSalaryClient())
                 .build();
+
+        statement.setCredit(credit);
         try {
             creditRepository.save(credit);
             creditRepository.flush(); // Гарантирует, что изменения попадут в БД немедленно
@@ -157,7 +159,7 @@ public class DealServiceImpl implements DealService {
 
         Client client = statement.getClient();
         ScoringDataDto scoringDataDto = new ScoringDataDto();
-        scoringDataDto.setAmount(BigDecimal.valueOf(requestDto.getDependentAmount()));
+        scoringDataDto.setAmount(statement.getCredit().getAmount());
         scoringDataDto.setTerm(statement.getCredit().getTerm());
         scoringDataDto.setFirstName(client.getFirstName());
         scoringDataDto.setLastName(client.getLastName());
@@ -212,11 +214,16 @@ public class DealServiceImpl implements DealService {
 
         try {
             log.info("Создание финального кредита на основе CreditDto: {}", creditDto);
-            Credit finalCredit = Credit.builder()
+            Credit finalCredit = statement.getCredit();
+
+            log.info("Id кредита: {}",finalCredit.getId() );
+            finalCredit = Credit.builder()
+                    .id(finalCredit.getId())
                     .amount(creditDto.getAmount())
                     .term(creditDto.getTerm())
                     .monthlyPayment(creditDto.getMonthlyPayment())
                     .rate(creditDto.getRate())
+                    .psk(creditDto.getPsk())
                     .paymentSchedule(creditDto.getPaymentSchedule())
                     .insuranceEnabled(creditDto.getIsInsuranceEnabled())
                     .salaryClient(creditDto.getIsSalaryClient())
