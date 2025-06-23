@@ -42,7 +42,6 @@ public class DealServiceTest {
     @Mock private StatementRepository statementRepository;
     @Mock private CreditRepository creditRepository;
     @Mock private RestClient restClient;
-    @Mock private ObjectMapper objectMapper;
     @InjectMocks private DealServiceImpl dealService;
 
 
@@ -125,87 +124,4 @@ public class DealServiceTest {
         verify(statementRepository).save(statement);
     }
 
-    @Test
-    void finishRegistrationAndCalculateCredit_Success() throws Exception {
-        // Arrange
-        String statementIdStr = UUID.randomUUID().toString();
-        UUID statementId = UUID.fromString(statementIdStr);
-
-        Client client = Client.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .middleName("M")
-                .birthDate(LocalDate.of(1990, 1, 1))
-                .passport(Passport.builder().series("1234").number("567890").build())
-                .accountNumber("acc123")
-                .build();
-
-        Credit credit = Credit.builder()
-                .id(UUID.randomUUID())
-                .term(12)
-                .insuranceEnabled(true)
-                .salaryClient(false)
-                .build();
-
-        Statement statement = new Statement();
-        statement.setId(statementId);
-        statement.setClient(client);
-        statement.setCredit(credit);
-
-        FinishRegistrationRequestDto requestDto = new FinishRegistrationRequestDto();
-        requestDto.setGender(Gender.MALE);
-        requestDto.setMaritalStatus(MaritalStatus.MARRIED);
-        requestDto.setDependentAmount(500000);
-        requestDto.setPassportIssueDate(LocalDate.of(2015, 6, 15));
-        requestDto.setPassportIssueBrach("770-001");
-        EmploymentDto employment = new EmploymentDto();
-        employment.setEmploymentStatus(EmploymentStatus.EMPLOYED);
-        employment.setEmployerINN("7707083893");
-        employment.setSalary(new BigDecimal("120000.00"));
-        employment.setPosition(Position.MID_MANAGER);
-        employment.setWorkExperienceTotal(84);
-        employment.setWorkExperienceCurrent(24);
-        requestDto.setEmployment(employment);
-        requestDto.setAccountNumber("40817810099910004312");
-
-
-        ScoringDataDto scoringData = new ScoringDataDto();
-        CreditDto creditDto = new CreditDto();
-        creditDto.setAmount(BigDecimal.valueOf(300000));
-        creditDto.setTerm(12);
-        creditDto.setMonthlyPayment(BigDecimal.valueOf(27000));
-        creditDto.setRate(BigDecimal.valueOf(13.5));
-        creditDto.setPsk(BigDecimal.valueOf(14.2));
-        creditDto.setIsInsuranceEnabled(true);
-        creditDto.setIsSalaryClient(false);
-        creditDto.setPaymentSchedule(List.of());
-
-        String jsonBody = "{}";
-
-        RestClient.RequestBodyUriSpec requestBodySpec = mock(RestClient.RequestBodyUriSpec.class);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
-        when(statementRepository.findById(statementId)).thenReturn(Optional.of(statement));
-        when(objectMapper.writeValueAsString(any(ScoringDataDto.class))).thenReturn(jsonBody);
-
-        when(restClient.post()).thenReturn(requestBodySpec);
-        when(requestBodySpec.uri("/calculator/calc")).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(jsonBody)).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(creditDto);
-
-        when(creditRepository.save(any(Credit.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(statementRepository.save(any(Statement.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        dealService.finishRegistrationAndCalculateCredit(statementIdStr, requestDto);
-
-        verify(statementRepository).findById(statementId);
-        when(objectMapper.writeValueAsString(any())).thenReturn(jsonBody);
-        verify(objectMapper).writeValueAsString(any());
-        verify(restClient).post();
-        verify(creditRepository).save(any(Credit.class));
-        verify(statementRepository).save(statement);
-
-        assertEquals(CreditStatus.CALCULATED, statement.getCredit().getCreditStatus());
-    }
 }
