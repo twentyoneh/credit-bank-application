@@ -17,7 +17,6 @@ import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -30,6 +29,20 @@ public class DealServiceImpl implements DealService {
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
 
+    private final ObjectMapper objectMapper;
+
+    private final RestClient restClient = RestClient.builder()
+            .baseUrl("http://localhost:8080")
+            .defaultHeader("Content-Type", "application/json")
+            .build();
+
+    /**
+     * Создаёт нового клиента и заявку, отправляет запрос на микросервис-калькулятор для получения кредитных предложений.
+     * Сохраняет данные в базу, обрабатывает ответ и возвращает список предложений.
+     *
+     * @param request параметры заявки на кредит
+     * @return список кредитных предложений
+     */
     @Override
     public List<LoanOfferDto> createStatement(LoanStatementRequestDto request) {
         Client client = new Client();
@@ -42,8 +55,6 @@ public class DealServiceImpl implements DealService {
         Passport passport = Passport.builder()
                 .series(request.getPassportSeries())
                 .number(request.getPassportNumber())
-//                .issueBranch(request.getPassportIssueBranch())
-//                .issueDate(request.getPassportIssueDate());
                 .build();
         client.setPassport(passport);
         client.setAccountNumber(UUID.randomUUID().toString());
@@ -56,13 +67,8 @@ public class DealServiceImpl implements DealService {
 
         // Отправка POST запроса на /calculator/offers МС калькулятор
         List<LoanOfferDto> offers;
-        RestClient restClient = RestClient.builder()
-                .baseUrl("http://localhost:8080")
-                .defaultHeader("Content-Type", "application/json")
-                .build();
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
+
         String json = new String();
         try {
             json = objectMapper.writeValueAsString(request);
@@ -95,6 +101,11 @@ public class DealServiceImpl implements DealService {
         return offers;
     }
 
+    /**
+     * Завершает регистрацию клиента и рассчитывает финальные параметры кредита.
+     *
+     * @param request Выбранный оффер, который пришёл из api /deal/statement
+     */
     @Override
     public void selectStatement(LoanOfferDto request) {
         log.info("Получен запрос на выбор предложения: {}", request);
@@ -129,7 +140,6 @@ public class DealServiceImpl implements DealService {
         statement.setCredit(credit);
         try {
             creditRepository.save(credit);
-            creditRepository.flush(); // Гарантирует, что изменения попадут в БД немедленно
 
             log.info("Credit успешно сохранен: {}", credit);
         } catch (Exception e) {
@@ -141,7 +151,6 @@ public class DealServiceImpl implements DealService {
 
         try {
             statementRepository.save(statement);
-            statementRepository.flush(); // Гарантирует, что изменения попадут в БД немедленно
 
             log.info("Заявка {} успешно обновлена: статус {}, выбрано предложение {}",
                     statement.getId(), statement.getStatus(), request);
@@ -151,6 +160,14 @@ public class DealServiceImpl implements DealService {
         }
     }
 
+    /**
+     * Завершает регистрацию клиента по заявке и рассчитывает финальные параметры кредита.
+     * Формирует объект ScoringDataDto на основе данных клиента и заявки, отправляет его в микросервис-калькулятор,
+     * получает финальные параметры кредита, сохраняет их в базу и обновляет статус заявки.
+     *
+     * @param statementId идентификатор заявки
+     * @param requestDto данные для завершения регистрации и скоринга
+     */
     @Override
     public void finishRegistrationAndCalculateCredit(String statementId, FinishRegistrationRequestDto requestDto) {
         Statement statement = statementRepository.findById(UUID.fromString(statementId))
@@ -159,7 +176,7 @@ public class DealServiceImpl implements DealService {
 
         Client client = statement.getClient();
         ScoringDataDto scoringDataDto = new ScoringDataDto();
-        scoringDataDto.setAmount(statement.getCredit().getAmount());
+        scoringDataDto.setAmount(BigDecimal.valueOf(requestDto.getDependentAmount()));
         scoringDataDto.setTerm(statement.getCredit().getTerm());
         scoringDataDto.setFirstName(client.getFirstName());
         scoringDataDto.setLastName(client.getLastName());
@@ -180,13 +197,7 @@ public class DealServiceImpl implements DealService {
         log.info("Создана ScoringDto: {}", scoringDataDto);
 
         CreditDto creditDto;
-        RestClient restClient = RestClient.builder()
-                .baseUrl("http://localhost:8080")
-                .defaultHeader("Content-Type", "application/json")
-                .build();
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
         String json = new String();
         try {
             json = objectMapper.writeValueAsString(scoringDataDto);
@@ -231,7 +242,6 @@ public class DealServiceImpl implements DealService {
                     .build();
 
             creditRepository.save(finalCredit);
-            statementRepository.flush();
             log.info("Финальный кредит успешно сохранён: {}", finalCredit);
         } catch (Exception e) {
             log.error("Ошибка при сохранении финального кредита: {}", e.getMessage(), e);
@@ -248,7 +258,6 @@ public class DealServiceImpl implements DealService {
             log.info("История статусов обновлена для заявки {}: {}", statement.getId(), statusHistory);
 
             statementRepository.save(statement);
-            statementRepository.flush();
             log.info("Заявка {} успешно обновлена после завершения регистрации", statement.getId());
         } catch (Exception e) {
             log.error("Ошибка при обновлении заявки {}: {}", statement.getId(), e.getMessage(), e);

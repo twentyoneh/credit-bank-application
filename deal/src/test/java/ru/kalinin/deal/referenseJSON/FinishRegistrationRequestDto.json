@@ -2,7 +2,7 @@
 {
   "gender": "MALE",
   "maritalStatus": "MARRIED",
-  "dependentAmount": 2,
+  "dependentAmount": 500000,
   "passportIssueDate": "2015-06-15",
   "passportIssueBrach": "770-001",
   "employment": {
