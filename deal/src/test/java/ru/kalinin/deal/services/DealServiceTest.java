@@ -1,5 +1,6 @@
 package ru.kalinin.deal.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -29,8 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -42,11 +42,16 @@ public class DealServiceTest {
     @Mock private StatementRepository statementRepository;
     @Mock private CreditRepository creditRepository;
     @Mock private RestClient restClient;
+    @Mock private ObjectMapper objectMapper;
+    @Mock private RestClient.RequestBodyUriSpec requestBodyUriSpec;
+    @Mock private RestClient.RequestBodySpec requestBodySpec;
+    @Mock private RestClient.ResponseSpec responseSpec;
     @InjectMocks private DealServiceImpl dealService;
 
 
     @Test
-    void testCreateStatement_ReturnsLoanOffers() {
+    void testCreateStatement_ReturnsLoanOffers() throws JsonProcessingException {
+
         LoanStatementRequestDto request = new LoanStatementRequestDto();
         request.setAmount(BigDecimal.valueOf(500000.00));
         request.setTerm(36);
@@ -64,29 +69,22 @@ public class DealServiceTest {
         Statement savedStatement = new Statement();
         savedStatement.setId(UUID.randomUUID());
         savedStatement.setClient(savedClient);
+        var statementId = savedStatement.getId();
 
         List<LoanOfferDto> expectedOffers = List.of(new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto(),new LoanOfferDto());
 
         when(clientRepository.save(any())).thenReturn(savedClient);
         when(statementRepository.save(any())).thenReturn(savedStatement);
 
-        // Мокаем только RequestBodyUriSpec и строим цепочку вызовов на нем
-        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
-        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
-        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
-
         when(restClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri("/calculator/offers")).thenReturn(requestBodySpec);
         when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
         when(requestBodySpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(expectedOffers);
+        List<LoanOfferDto> result = dealService.createStatement(request);
 
-        // Вызов метода
-        List<LoanOfferDto> actualOffers = dealService.createStatement(request);
-
-        // Проверки
-        assertNotNull(actualOffers);
-        assertEquals(4, actualOffers.size());
+        assertNotNull(result);
+        assertEquals(4, result.size());
     }
 
     @Test

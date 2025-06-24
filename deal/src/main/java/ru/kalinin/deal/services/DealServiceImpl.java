@@ -28,7 +28,6 @@ public class DealServiceImpl implements DealService {
     private final ClientRepository clientRepository;
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
-
     private final ObjectMapper objectMapper;
 
     private final RestClient restClient = RestClient.builder()
@@ -68,19 +67,10 @@ public class DealServiceImpl implements DealService {
         // Отправка POST запроса на /calculator/offers МС калькулятор
         List<LoanOfferDto> offers;
 
-
-        String json = new String();
-        try {
-            json = objectMapper.writeValueAsString(request);
-            log.info("Сериализованный объект LoanStatementRequestDto: {}", json);
-        } catch (Exception e) {
-            log.error("Ошибка сериализации объекта LoanStatementRequestDto: {}", e.getMessage());
-        }
-
         try {
             offers = restClient.post()
                     .uri("/calculator/offers")
-                    .body(json)
+                    .body(request)
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<LoanOfferDto>>() {
                     });
