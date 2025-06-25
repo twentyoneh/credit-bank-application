@@ -35,7 +35,7 @@ public class DealControllerImpl implements DealController {
     @PostMapping("/offer/select")
     public ResponseEntity<Void> selectStatement(
             @RequestBody @Valid LoanOfferDto requestDto) {
-        log.info("POST request {} path {}", requestDto, "/offer/select");
+        log.info("POST request {} path {}", requestDto, "deal/offer/select");
         dealService.selectStatement(requestDto);
         return null;
     }
@@ -45,7 +45,7 @@ public class DealControllerImpl implements DealController {
     public ResponseEntity<Void> finishRegistrationAndCalculateCredit(
             @PathVariable String statementId,
             @RequestBody FinishRegistrationRequestDto requestDto) {
-        log.info("POST request {} statementId {} path {}", requestDto, statementId, "/calculate/{statementId}");
+        log.info("POST request {} statementId {} path {}", requestDto, statementId, "deal/calculate/{statementId}");
         dealService.finishRegistrationAndCalculateCredit(statementId, requestDto);
         return null;
     }
