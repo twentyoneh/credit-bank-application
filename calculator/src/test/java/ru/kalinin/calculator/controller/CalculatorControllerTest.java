@@ -22,7 +22,7 @@ public class CalculatorControllerTest {
     @BeforeEach
     void setUp() {
         service = mock(CalculatorService.class);
-        controller = new CalculatorControllerImpl(service); // используйте реальную реализацию
+        controller = new CalculatorControllerImpl(service);
     }
 
     private LoanStatementRequestDto getValidLoanRequest() {

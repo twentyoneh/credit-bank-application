@@ -31,7 +31,6 @@ public class CalculatorServiceImpl implements CalculatorService {
      */
     @Override
     public List<LoanOfferDto> calculateOffers(LoanStatementRequestDto request) {
-//        preScoring(request);
 
         List<LoanOfferDto> offers = new ArrayList<>();
 
