@@ -53,7 +53,7 @@ public class Client {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @JoinColumn(name = "passport_id", columnDefinition = "jsonb")
-    private Passport passport; //FK
+    private UUID passport; //FK
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "employment_id", columnDefinition = "jsonb")

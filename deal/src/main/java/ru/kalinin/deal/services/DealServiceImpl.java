@@ -55,7 +55,7 @@ public class DealServiceImpl implements DealService {
                 .series(request.getPassportSeries())
                 .number(request.getPassportNumber())
                 .build();
-        client.setPassport(passport);
+        client.setPassport(passport.getId());
         client.setAccountNumber(UUID.randomUUID().toString());
 
         clientRepository.save(client);
