@@ -29,6 +29,7 @@ public class StatementServiceImpl implements StatementService {
             log.warn("Ошибка валидации заявки: {}", e.getMessage());
             return List.of();
         }
+        log.info("Успешно создана заявка на кредит: {}", requestDto);
 
         List<LoanOfferDto> offers;
         try {
@@ -47,6 +48,7 @@ public class StatementServiceImpl implements StatementService {
             log.error("Ошибка при вызове микросервиса deal /deal/statement: {}", e.getMessage());
             throw new RuntimeException("Не удалось получить ответ от микросервиса deal", e);
         }
+        log.info("Получены предложения по кредиту: {}", offers);
 
         return offers;
     }
@@ -67,6 +69,8 @@ public class StatementServiceImpl implements StatementService {
             log.error("Ошибка при вызове микросервиса deal /deal/statement: {}", e.getMessage());
             throw new RuntimeException("Не удалось получить ответ от микросервиса deal", e);
         }
+        log.info("Выбрано предложение по кредиту: {}", offerDto);
+        log.info("Ответ от микросервиса deal: {}", response.toString());
     }
 
     /**

@@ -52,8 +52,8 @@ public class Client {
     private BigDecimal dependentAmount;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @JoinColumn(name = "passport_id", columnDefinition = "jsonb")
-    private UUID passport; //FK
+    @Column(name = "passport_id", columnDefinition = "jsonb")
+    private Passport passport; //FK
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "employment_id", columnDefinition = "jsonb")
