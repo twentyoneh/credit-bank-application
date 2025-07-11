@@ -25,7 +25,8 @@ public class StatementServiceImpl implements StatementService {
     public List<LoanOfferDto> createStatement(LoanStatementRequestDto requestDto) {
         try {
             preScoring(requestDto);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             log.warn("Ошибка валидации заявки: {}", e.getMessage());
             return List.of();
         }
@@ -41,7 +42,7 @@ public class StatementServiceImpl implements StatementService {
                     });
 
             if(offers == null || offers.isEmpty()){
-                throw new RuntimeException("Ответ от микросервиса deal пустой");
+                return List.of();
             }
         }
         catch (Exception e){
@@ -70,7 +71,11 @@ public class StatementServiceImpl implements StatementService {
             throw new RuntimeException("Не удалось получить ответ от микросервиса deal", e);
         }
         log.info("Выбрано предложение по кредиту: {}", offerDto);
-        log.info("Ответ от микросервиса deal: {}", response.toString());
+        if (response != null) {
+            log.info("Ответ от микросервиса deal: {}", response.toString());
+        } else {
+            log.warn("Ответ от микросервиса deal: null");
+        }
     }
 
     /**

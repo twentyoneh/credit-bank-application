@@ -39,7 +39,12 @@ public class CalculatorServiceImpl implements CalculatorService {
         offers.add(addOrder(request,true,false));
         offers.add(addOrder(request,false,true));
 
+        if(offers == null || offers.isEmpty()){
+            return List.of();
+        }
+
         offers.sort(Comparator.comparing(LoanOfferDto::getRate).reversed());
+
         return offers;
     }
 
@@ -217,6 +222,9 @@ public class CalculatorServiceImpl implements CalculatorService {
     private LoanOfferDto addOrder(LoanStatementRequestDto requestDto,
                                   Boolean isInsuranceEnabled, Boolean isSalaryClient) {
 
+        if(requestDto == null){
+            return null;
+        }
         // Стоимость страховки
         BigDecimal insuranceCost = new BigDecimal("100000");
         BigDecimal amount = requestDto.getAmount();

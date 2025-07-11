@@ -75,13 +75,13 @@ public class DealServiceImpl implements DealService {
                     .body(new ParameterizedTypeReference<List<LoanOfferDto>>() {
                     });
 
-            if(offers == null || offers.isEmpty()){
-                throw new RuntimeException("Ответ от микросервиса калькулятора пустой");
-            }
         }
         catch (Exception e){
             log.error("Ошибка при вызове микросервиса калькулятора /calculator/offers: {}", e.getMessage());
             throw new RuntimeException("Не удалось получить ответ от микросервиса калькулятора", e);
+        }
+        if(offers == null || offers.isEmpty()){
+            return List.of();
         }
 
         log.info("Успешно полученны оферы");
@@ -109,7 +109,7 @@ public class DealServiceImpl implements DealService {
         log.info("Найдена заявка: {}", statement.getId());
 
         StatusHistory statusHistory = StatusHistory.builder()
-                .status("LoanOffer " + request + "was select")
+                .status(String.valueOf(ApplicationStatus.APPROVED))
                 .time(LocalDateTime.now())
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
