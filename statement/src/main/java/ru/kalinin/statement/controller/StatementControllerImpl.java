@@ -27,7 +27,7 @@ public class StatementControllerImpl implements StatementController {
     public ResponseEntity<List<LoanOfferDto>> createStatement(
             @RequestBody @Valid LoanStatementRequestDto requestDto) {
         log.info("POST request {} path {}", requestDto, "/statement");
-        return ResponseEntity.ok(statementService.createStatement(requestDto));
+        return statementService.createStatement(requestDto);
     }
 
     @Override
@@ -35,8 +35,7 @@ public class StatementControllerImpl implements StatementController {
     public ResponseEntity<Void> selectOffer(
             @RequestBody @Valid LoanOfferDto offerDto) {
         log.info("POST request {} path {}", offerDto, "/statement/offer");
-        statementService.selectOffer(offerDto);
-        return null;
+        return statementService.selectOffer(offerDto);
     }
 
 

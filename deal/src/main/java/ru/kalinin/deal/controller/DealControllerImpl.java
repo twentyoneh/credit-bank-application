@@ -25,10 +25,8 @@ public class DealControllerImpl implements DealController {
     public ResponseEntity<List<LoanOfferDto>> createStatement(
             @RequestBody @Valid LoanStatementRequestDto requestDto)
     {
-
         log.info("POST request {} path {}", requestDto, "/deal/statement");
-
-        return  ResponseEntity.ok(dealService.createStatement(requestDto));
+        return dealService.createStatement(requestDto);
     }
 
     @Override
@@ -36,8 +34,7 @@ public class DealControllerImpl implements DealController {
     public ResponseEntity<Void> selectStatement(
             @RequestBody @Valid LoanOfferDto requestDto) {
         log.info("POST request {} path {}", requestDto, "deal/offer/select");
-        dealService.selectStatement(requestDto);
-        return null;
+        return dealService.selectStatement(requestDto);
     }
 
     @Override
@@ -46,8 +43,7 @@ public class DealControllerImpl implements DealController {
             @PathVariable String statementId,
             @RequestBody FinishRegistrationRequestDto requestDto) {
         log.info("POST request {} statementId {} path {}", requestDto, statementId, "deal/calculate/{statementId}");
-        dealService.finishRegistrationAndCalculateCredit(statementId, requestDto);
-        return null;
+        return dealService.finishRegistrationAndCalculateCredit(statementId, requestDto);
     }
 
 

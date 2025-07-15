@@ -81,7 +81,8 @@ public class DealServiceTest {
         when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
         when(requestBodySpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(expectedOffers);
-        List<LoanOfferDto> result = dealService.createStatement(request);
+
+        List<LoanOfferDto> result = dealService.createStatement(request).getBody();
 
         assertNotNull(result);
         assertEquals(4, result.size());

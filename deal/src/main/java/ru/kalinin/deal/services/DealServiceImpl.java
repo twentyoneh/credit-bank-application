@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import ru.kalinin.common.dto.*;
@@ -43,7 +44,7 @@ public class DealServiceImpl implements DealService {
      * @return список кредитных предложений
      */
     @Override
-    public List<LoanOfferDto> createStatement(LoanStatementRequestDto request) {
+    public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto request) {
         Client client = new Client();
         client.setLastName(request.getLastName());
         client.setFirstName(request.getFirstName());
@@ -52,6 +53,7 @@ public class DealServiceImpl implements DealService {
         client.setEmail(request.getEmail());
         client.setDependentAmount(request.getAmount());
         Passport passport = Passport.builder()
+                .id(UUID.randomUUID())
                 .series(request.getPassportSeries())
                 .number(request.getPassportNumber())
                 .build();
@@ -60,8 +62,17 @@ public class DealServiceImpl implements DealService {
 
         clientRepository.save(client);
 
+        StatusHistory statusHistory = StatusHistory.builder()
+                .status(String.valueOf(ApplicationStatus.PREAPPROVAL))
+                .time(LocalDateTime.now())
+                .changeType(ChangeType.AUTOMATIC)
+                .build();
+
         Statement statement = new Statement();
         statement.setClient(client);
+        statement.setCreationDate(LocalDateTime.now());
+        statement.setStatus(String.valueOf(ApplicationStatus.PREAPPROVAL));
+        statement.getStatusHistory().add(statusHistory);
         statementRepository.save(statement);
 
         // Отправка POST запроса на /calculator/offers МС калькулятор
@@ -81,14 +92,14 @@ public class DealServiceImpl implements DealService {
             throw new RuntimeException("Не удалось получить ответ от микросервиса калькулятора", e);
         }
         if(offers == null || offers.isEmpty()){
-            return List.of();
+            return ResponseEntity.noContent().build();
         }
 
         log.info("Успешно полученны оферы");
         for (LoanOfferDto offer : offers) {
             offer.setStatementId(statement.getId());
         }
-        return offers;
+        return ResponseEntity.ok(offers);
     }
 
     /**
@@ -97,7 +108,7 @@ public class DealServiceImpl implements DealService {
      * @param request Выбранный оффер, который пришёл из api /deal/statement
      */
     @Override
-    public void selectStatement(LoanOfferDto request) {
+    public ResponseEntity<Void> selectStatement(LoanOfferDto request) {
         log.info("Получен запрос на выбор предложения: {}", request);
 
         Statement statement = statementRepository.findById(request.getStatementId())
@@ -114,8 +125,8 @@ public class DealServiceImpl implements DealService {
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
 
-        statement.setStatusHistory(List.of(statusHistory));
-        statement.setStatus(ApplicationStatus.APPROVED);
+        statement.getStatusHistory().add(statusHistory);
+        statement.setStatus(String.valueOf(ApplicationStatus.APPROVED));
         statement.setAppliedOffer(request);
 
         Credit credit = Credit.builder()
@@ -127,7 +138,6 @@ public class DealServiceImpl implements DealService {
                 .salaryClient(request.getIsSalaryClient())
                 .build();
 
-        statement.setCredit(credit);
         try {
             creditRepository.save(credit);
 
@@ -136,7 +146,6 @@ public class DealServiceImpl implements DealService {
             log.error("Ошибка при сохранении Credit {} в базу данных: {}", credit.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при сохранении Credit в базу данных", e);
         }
-
         statement.setCredit(credit);
 
         try {
@@ -148,6 +157,7 @@ public class DealServiceImpl implements DealService {
             log.error("Ошибка при сохранении заявки {} в базу данных: {}", statement.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при сохранении заявки в базу данных", e);
         }
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -159,36 +169,18 @@ public class DealServiceImpl implements DealService {
      * @param requestDto данные для завершения регистрации и скоринга
      */
     @Override
-    public void finishRegistrationAndCalculateCredit(String statementId, FinishRegistrationRequestDto requestDto) {
+    public ResponseEntity<Void> finishRegistrationAndCalculateCredit(String statementId, FinishRegistrationRequestDto requestDto) {
         Statement statement = statementRepository.findById(UUID.fromString(statementId))
                 .orElseThrow(() -> new RuntimeException("Заявка не найдена по id: " + statementId));
         log.info("Найдена заявка: {}", statementId);
 
-        Client client = statement.getClient();
-        ScoringDataDto scoringDataDto = new ScoringDataDto();
-        scoringDataDto.setAmount(BigDecimal.valueOf(requestDto.getDependentAmount()));
-        scoringDataDto.setTerm(statement.getCredit().getTerm());
-        scoringDataDto.setFirstName(client.getFirstName());
-        scoringDataDto.setLastName(client.getLastName());
-        scoringDataDto.setMiddleName(client.getMiddleName());
-        scoringDataDto.setGender(requestDto.getGender());
-        scoringDataDto.setBirthdate(client.getBirthDate());
-        scoringDataDto.setPassportSeries(client.getPassport().getSeries());
-        scoringDataDto.setPassportNumber(client.getPassport().getNumber());
-        scoringDataDto.setPassportIssueDate(requestDto.getPassportIssueDate());
-        scoringDataDto.setPassportIssueBranch(requestDto.getPassportIssueBrach());
-        scoringDataDto.setMaritalStatus(requestDto.getMaritalStatus());
-        scoringDataDto.setDependentAmount(requestDto.getDependentAmount());
-        scoringDataDto.setEmployment(requestDto.getEmployment());
-        scoringDataDto.setAccountNumber(client.getAccountNumber());
-        scoringDataDto.setIsInsuranceEnabled(statement.getCredit().getInsuranceEnabled());
-        scoringDataDto.setIsSalaryClient(statement.getCredit().getSalaryClient());
+        ScoringDataDto scoringDataDto = getScoringDataDto(requestDto, statement);
 
         log.info("Создана ScoringDto: {}", scoringDataDto);
 
         CreditDto creditDto;
 
-        String json = new String();
+        String json = "";
         try {
             json = objectMapper.writeValueAsString(scoringDataDto);
             log.info("Сериализованный объект ScoringDataDto: {}", json);
@@ -253,6 +245,30 @@ public class DealServiceImpl implements DealService {
             log.error("Ошибка при обновлении заявки {}: {}", statement.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при обновлении заявки после завершения регистрации", e);
         }
+        return ResponseEntity.ok().build();
+    }
+
+    private static ScoringDataDto getScoringDataDto(FinishRegistrationRequestDto requestDto, Statement statement) {
+        Client client = statement.getClient();
+        ScoringDataDto scoringDataDto = new ScoringDataDto();
+        scoringDataDto.setAmount(BigDecimal.valueOf(requestDto.getDependentAmount()));
+        scoringDataDto.setTerm(statement.getCredit().getTerm());
+        scoringDataDto.setFirstName(client.getFirstName());
+        scoringDataDto.setLastName(client.getLastName());
+        scoringDataDto.setMiddleName(client.getMiddleName());
+        scoringDataDto.setGender(requestDto.getGender());
+        scoringDataDto.setBirthdate(client.getBirthDate());
+        scoringDataDto.setPassportSeries(client.getPassport().getSeries());
+        scoringDataDto.setPassportNumber(client.getPassport().getNumber());
+        scoringDataDto.setPassportIssueDate(requestDto.getPassportIssueDate());
+        scoringDataDto.setPassportIssueBranch(requestDto.getPassportIssueBrach());
+        scoringDataDto.setMaritalStatus(requestDto.getMaritalStatus());
+        scoringDataDto.setDependentAmount(requestDto.getDependentAmount());
+        scoringDataDto.setEmployment(requestDto.getEmployment());
+        scoringDataDto.setAccountNumber(client.getAccountNumber());
+        scoringDataDto.setIsInsuranceEnabled(statement.getCredit().getInsuranceEnabled());
+        scoringDataDto.setIsSalaryClient(statement.getCredit().getSalaryClient());
+        return scoringDataDto;
     }
 
 

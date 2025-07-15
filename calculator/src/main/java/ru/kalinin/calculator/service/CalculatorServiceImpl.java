@@ -1,6 +1,7 @@
 package ru.kalinin.calculator.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.kalinin.common.dto.*;
 import ru.kalinin.common.enums.EmploymentStatus;
@@ -30,7 +31,7 @@ public class CalculatorServiceImpl implements CalculatorService {
      * @apiNote Возвращает 4 варианта предложений с разными условиями (страховка/зарплатный клиент).
      */
     @Override
-    public List<LoanOfferDto> calculateOffers(LoanStatementRequestDto request) {
+    public ResponseEntity<List<LoanOfferDto>> calculateOffers(LoanStatementRequestDto request) {
 
         List<LoanOfferDto> offers = new ArrayList<>();
 
@@ -40,12 +41,12 @@ public class CalculatorServiceImpl implements CalculatorService {
         offers.add(addOrder(request,false,true));
 
         if(offers == null || offers.isEmpty()){
-            return List.of();
+            return ResponseEntity.noContent().build();
         }
 
         offers.sort(Comparator.comparing(LoanOfferDto::getRate).reversed());
 
-        return offers;
+        return ResponseEntity.ok(offers);
     }
 
     /**
@@ -57,7 +58,7 @@ public class CalculatorServiceImpl implements CalculatorService {
      * @apiNote Выполняет скоринг, рассчитывает ставку, ежемесячный платёж, ПСК и график платежей.
      */
     @Override
-    public CreditDto calculateCredit(ScoringDataDto data) {
+    public ResponseEntity<CreditDto> calculateCredit(ScoringDataDto data) {
         BigDecimal rate = scoring(data);
         BigDecimal amount = data.getAmount();
         int term = data.getTerm();
@@ -76,7 +77,7 @@ public class CalculatorServiceImpl implements CalculatorService {
         creditDto.setIsSalaryClient(data.getIsSalaryClient());
         creditDto.setPaymentSchedule(schedule);
 
-        return creditDto;
+        return ResponseEntity.ok(creditDto);
     }
 
     /**
