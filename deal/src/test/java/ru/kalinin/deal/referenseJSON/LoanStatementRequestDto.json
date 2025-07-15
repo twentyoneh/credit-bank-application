@@ -1,0 +1,11 @@
+{
+  "amount": 500000.00,
+  "term": 36,
+  "firstName": "Ivam",
+  "lastName": "Ivaniv",
+  "middleName": "Ivanovich",
+  "email": "ivanov@example.com",
+  "birthdate": "1990-01-01",
+  "passportSeries": "1234",
+  "passportNumber": "567890"
+}

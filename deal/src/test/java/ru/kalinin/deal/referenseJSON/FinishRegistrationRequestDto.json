@@ -1,0 +1,17 @@
+3ec2583c-1853-476d-91e7-303826ebf88a
+{
+  "gender": "MALE",
+  "maritalStatus": "MARRIED",
+  "dependentAmount": 500000,
+  "passportIssueDate": "2015-06-15",
+  "passportIssueBrach": "770-001",
+  "employment": {
+    "status": "EMPLOYED",
+    "employerINN": "7707083893",
+    "salary": 120000.00,
+    "position": "MID_MANAGER",
+    "workExperienceTotal": 84,
+    "workExperienceCurrent": 24
+  },
+  "accountNumber": "40817810099910004312"
+}
