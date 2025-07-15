@@ -50,63 +50,63 @@ public class StatementServiceTest {
     void calculateOffers_invalidName_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setFirstName("Иван");
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidLastName_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setLastName("Иванов");
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidMiddleName_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setMiddleName("Иванович");
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidAmount_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setAmount(new BigDecimal(10000));
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidTerm_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setTerm(2);
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidBirthdate_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setBirthdate(java.time.LocalDate.now().minusYears(17));
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidEmail_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setEmail("АБВ@яндекс.ру");
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidPassportSeries_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setPassportSeries("1234567890");
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
     void calculateOffers_invalidPassportNumber_throwsException() {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setPassportNumber("1234567890");
-        assertTrue(statementService.createStatement(request).isEmpty());
+        assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
     }
 
     @Test
@@ -117,7 +117,7 @@ public class StatementServiceTest {
                 .body(any(ParameterizedTypeReference.class)))
                 .thenReturn(offers);
 
-        List<LoanOfferDto> result = statementService.createStatement(request);
+        List<LoanOfferDto> result = statementService.createStatement(request).getBody();
         assertEquals(offers.size(), result.size());
     }
 
@@ -130,7 +130,7 @@ public class StatementServiceTest {
                 .thenReturn(offers)
                 .thenReturn(ResponseEntity.ok().build());
 
-        List<LoanOfferDto> resultOffers = statementService.createStatement(request);
+        List<LoanOfferDto> resultOffers = statementService.createStatement(request).getBody();
         LoanOfferDto offerDto = resultOffers.get(0);
 
         assertDoesNotThrow(() -> statementService.selectOffer(offerDto));
