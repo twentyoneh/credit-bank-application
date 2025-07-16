@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,8 @@ import ru.kalinin.deal.models.enums.CreditStatus;
 import ru.kalinin.deal.repositories.ClientRepository;
 import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
+import ru.kalinin.deal.util.ClientMapper;
+import ru.kalinin.deal.util.StatementMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,49 +33,20 @@ public class DealServiceImpl implements DealService {
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
     private final ObjectMapper objectMapper;
+    private final ClientMapper clientMapper;
+    private final StatementMapper statementMapper;
 
     private final RestClient restClient = RestClient.builder()
             .baseUrl("http://localhost:8080")
             .defaultHeader("Content-Type", "application/json")
             .build();
 
-    /**
-     * Создаёт нового клиента и заявку, отправляет запрос на микросервис-калькулятор для получения кредитных предложений.
-     * Сохраняет данные в базу, обрабатывает ответ и возвращает список предложений.
-     *
-     * @param request параметры заявки на кредит
-     * @return список кредитных предложений
-     */
     @Override
     public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto request) {
-        Client client = new Client();
-        client.setLastName(request.getLastName());
-        client.setFirstName(request.getFirstName());
-        client.setMiddleName(request.getMiddleName());
-        client.setBirthDate(request.getBirthdate());
-        client.setEmail(request.getEmail());
-        client.setDependentAmount(request.getAmount());
-        Passport passport = Passport.builder()
-                .id(UUID.randomUUID())
-                .series(request.getPassportSeries())
-                .number(request.getPassportNumber())
-                .build();
-        client.setPassport(passport);
-        client.setAccountNumber(UUID.randomUUID().toString());
-
+        Client client = clientMapper.toClient(request);
         clientRepository.save(client);
 
-        StatusHistory statusHistory = StatusHistory.builder()
-                .status(String.valueOf(ApplicationStatus.PREAPPROVAL))
-                .time(LocalDateTime.now())
-                .changeType(ChangeType.AUTOMATIC)
-                .build();
-
-        Statement statement = new Statement();
-        statement.setClient(client);
-        statement.setCreationDate(LocalDateTime.now());
-        statement.setStatus(String.valueOf(ApplicationStatus.PREAPPROVAL));
-        statement.getStatusHistory().add(statusHistory);
+        Statement statement = statementMapper.toStatement(client);
         statementRepository.save(statement);
 
         // Отправка POST запроса на /calculator/offers МС калькулятор
