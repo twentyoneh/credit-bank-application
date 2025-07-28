@@ -1,10 +1,8 @@
 package ru.kalinin.deal.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,9 +16,8 @@ import ru.kalinin.deal.repositories.ClientRepository;
 import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
 import ru.kalinin.deal.util.ClientMapper;
-import ru.kalinin.deal.util.StatementMapper;
+import ru.kalinin.deal.util.ScoringDataMapper;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -34,20 +31,35 @@ public class DealServiceImpl implements DealService {
     private final CreditRepository creditRepository;
     private final ObjectMapper objectMapper;
     private final ClientMapper clientMapper;
-    private final StatementMapper statementMapper;
+    private final ScoringDataMapper scoringDataMapper;
 
     private final RestClient restClient = RestClient.builder()
             .baseUrl("http://localhost:8080")
             .defaultHeader("Content-Type", "application/json")
             .build();
 
+    ///deal/statement
     @Override
     public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto request) {
         Client client = clientMapper.toClient(request);
         clientRepository.save(client);
+        log.info("Client {} created", client.getId());
 
-        Statement statement = statementMapper.toStatement(client);
+        StatusHistory statusHistory = StatusHistory.builder()
+                .status(String.valueOf(ApplicationStatus.PREAPPROVAL))
+                .time(LocalDateTime.now())
+                .changeType(ChangeType.AUTOMATIC)
+                .build();
+
+        Statement statement = new Statement();
+        statement.setClient(client);
+        statement.setCreationDate(LocalDateTime.now());
+        statement.setStatus(String.valueOf(ApplicationStatus.PREAPPROVAL));
+        statement.getStatusHistory().add(statusHistory);
         statementRepository.save(statement);
+        log.info("Statement {} created", statement.getId());
+
+
 
         // Отправка POST запроса на /calculator/offers МС калькулятор
         List<LoanOfferDto> offers;
@@ -59,7 +71,6 @@ public class DealServiceImpl implements DealService {
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<LoanOfferDto>>() {
                     });
-
         }
         catch (Exception e){
             log.error("Ошибка при вызове микросервиса калькулятора /calculator/offers: {}", e.getMessage());
@@ -148,7 +159,8 @@ public class DealServiceImpl implements DealService {
                 .orElseThrow(() -> new RuntimeException("Заявка не найдена по id: " + statementId));
         log.info("Найдена заявка: {}", statementId);
 
-        ScoringDataDto scoringDataDto = getScoringDataDto(requestDto, statement);
+        Client client = statement.getClient();
+        ScoringDataDto scoringDataDto = scoringDataMapper.toScoringDataDto(client, statement, requestDto);
 
         log.info("Создана ScoringDto: {}", scoringDataDto);
 
@@ -221,29 +233,4 @@ public class DealServiceImpl implements DealService {
         }
         return ResponseEntity.ok().build();
     }
-
-    private static ScoringDataDto getScoringDataDto(FinishRegistrationRequestDto requestDto, Statement statement) {
-        Client client = statement.getClient();
-        ScoringDataDto scoringDataDto = new ScoringDataDto();
-        scoringDataDto.setAmount(BigDecimal.valueOf(requestDto.getDependentAmount()));
-        scoringDataDto.setTerm(statement.getCredit().getTerm());
-        scoringDataDto.setFirstName(client.getFirstName());
-        scoringDataDto.setLastName(client.getLastName());
-        scoringDataDto.setMiddleName(client.getMiddleName());
-        scoringDataDto.setGender(requestDto.getGender());
-        scoringDataDto.setBirthdate(client.getBirthDate());
-        scoringDataDto.setPassportSeries(client.getPassport().getSeries());
-        scoringDataDto.setPassportNumber(client.getPassport().getNumber());
-        scoringDataDto.setPassportIssueDate(requestDto.getPassportIssueDate());
-        scoringDataDto.setPassportIssueBranch(requestDto.getPassportIssueBrach());
-        scoringDataDto.setMaritalStatus(requestDto.getMaritalStatus());
-        scoringDataDto.setDependentAmount(requestDto.getDependentAmount());
-        scoringDataDto.setEmployment(requestDto.getEmployment());
-        scoringDataDto.setAccountNumber(client.getAccountNumber());
-        scoringDataDto.setIsInsuranceEnabled(statement.getCredit().getInsuranceEnabled());
-        scoringDataDto.setIsSalaryClient(statement.getCredit().getSalaryClient());
-        return scoringDataDto;
-    }
-
-
 }
