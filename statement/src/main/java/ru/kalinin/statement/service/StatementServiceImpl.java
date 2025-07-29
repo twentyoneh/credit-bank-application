@@ -23,6 +23,7 @@ public class StatementServiceImpl implements StatementService {
             .defaultHeader("Content-Type", "application/json")
             .build();
 
+    // /statement
     @Override
     public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto requestDto) {
         try {
@@ -56,6 +57,7 @@ public class StatementServiceImpl implements StatementService {
         return ResponseEntity.ok(offers);
     }
 
+    // /statement/offer
     @Override
     public ResponseEntity<Void> selectOffer(LoanOfferDto offerDto) {
         ResponseEntity<Void> response;
