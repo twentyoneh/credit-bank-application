@@ -1,14 +1,16 @@
 package ru.kalinin.common.dto;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Data
 
 @Schema(description = "DTO с параметрами рассчитанного кредита, включая сумму, срок, ставку, ПСК, опции и график платежей")
+@Builder
+@Data
 public class CreditDto {
     @Schema(description = "Сумма кредита", example = "500000.00")
     private BigDecimal amount;

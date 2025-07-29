@@ -1,12 +1,14 @@
 package ru.kalinin.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Schema(description = "Элемент графика платежей по кредиту")
+@Builder
 @Data
 public class PaymentScheduleElementDto {
     @Schema(description = "Номер платежа в графике", example = "1")
