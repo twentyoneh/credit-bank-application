@@ -1,5 +1,10 @@
 package ru.kalinin.common.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
 public enum MaritalStatus {
-    SINGLE, MARRIED, DIVORCED, WIDOWED
+    MARRIED, DIVORCED, SINGLE, WIDOW_WIDOWER
 }

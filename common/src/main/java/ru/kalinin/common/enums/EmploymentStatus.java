@@ -1,5 +1,11 @@
 package ru.kalinin.common.enums;
 
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
 public enum EmploymentStatus {
-    EMPLOYED, UNEMPLOYED, SELF_EMPLOYED, BUSINESS_OWNER
+    UNEMPLOYED, SELF_EMPLOYED, BUSINESS_OWNER, EMPLOYED
 }
