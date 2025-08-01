@@ -67,17 +67,17 @@ public class CalculatorServiceImpl implements CalculatorService {
         List<PaymentScheduleElementDto> schedule = generatePaymentSchedule(amount, rate, term);
         BigDecimal psk = calculatePSK(monthlyPayment,term,amount);
 
-        CreditDto creditDto = new CreditDto();
-        creditDto.setAmount(amount);
-        creditDto.setTerm(term);
-        creditDto.setMonthlyPayment(monthlyPayment);
-        creditDto.setRate(rate);
-        creditDto.setPsk(psk);
-        creditDto.setIsInsuranceEnabled(data.getIsInsuranceEnabled());
-        creditDto.setIsSalaryClient(data.getIsSalaryClient());
-        creditDto.setPaymentSchedule(schedule);
 
-        return ResponseEntity.ok(creditDto);
+        return CreditDto.builder()
+                .amount(amount)
+                .term(term)
+                .monthlyPayment(monthlyPayment)
+                .rate(rate)
+                .psk(psk)
+                .isInsuranceEnabled(data.getIsInsuranceEnabled())
+                .isSalaryClient(data.getIsSalaryClient())
+                .paymentSchedule(schedule)
+                .build();
     }
 
     /**
@@ -104,13 +104,15 @@ public class CalculatorServiceImpl implements CalculatorService {
             if (month == term) {
                 monthlyPayment = principalPayment.add(interestPayment);
             }
-            PaymentScheduleElementDto element = new PaymentScheduleElementDto();
-            element.setNumber(month);
-            element.setDate(LocalDate.now().plusMonths(month - 1));
-            element.setTotalPayment(monthlyPayment);
-            element.setInterestPayment(interestPayment);
-            element.setDebtPayment(principalPayment);
-            element.setRemainingDebt(remainingDebt.subtract(principalPayment));
+            PaymentScheduleElementDto element = PaymentScheduleElementDto.builder()
+                    .number(month)
+                    .date(LocalDate.now().plusMonths(month - 1))
+                    .totalPayment(monthlyPayment)
+                    .interestPayment(interestPayment)
+                    .debtPayment(principalPayment)
+                    .remainingDebt(remainingDebt.subtract(principalPayment))
+                    .build();
+
             schedule.add(element);
 
             remainingDebt = remainingDebt.subtract(principalPayment);
@@ -249,16 +251,16 @@ public class CalculatorServiceImpl implements CalculatorService {
         BigDecimal monthlyPayment = calculateMonthlyPayment(totalAmount, rate, term);
 
         // Формирование DTO предложения
-        LoanOfferDto offer = new LoanOfferDto();
-        offer.setRequestedAmount(amount);
-        offer.setTotalAmount(totalAmount);
-        offer.setTerm(term);
-        offer.setRate(rate);
-        offer.setMonthlyPayment(monthlyPayment);
-        offer.setIsInsuranceEnabled(isInsuranceEnabled);
-        offer.setIsSalaryClient(isSalaryClient);
 
-        return offer;
+        return LoanOfferDto.builder()
+                .requestedAmount(amount)
+                .totalAmount(totalAmount)
+                .term(term)
+                .rate(rate)
+                .monthlyPayment(monthlyPayment)
+                .isInsuranceEnabled(isInsuranceEnabled)
+                .isSalaryClient(isSalaryClient)
+                .build();
     }
 
     /**

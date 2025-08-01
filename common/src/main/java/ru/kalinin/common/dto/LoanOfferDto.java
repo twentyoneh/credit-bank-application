@@ -1,12 +1,14 @@
 package ru.kalinin.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Schema(description = "DTO предложения по кредиту, содержит параметры одобренного кредита")
+@Builder
 @Data
 public class LoanOfferDto {
     @Schema(description = "Идентификатор заявки", example = "550e8400-e29b-41d4-a716-446655440000")
