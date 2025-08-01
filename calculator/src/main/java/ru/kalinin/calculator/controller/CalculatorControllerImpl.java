@@ -34,15 +34,8 @@ public class CalculatorControllerImpl implements CalculatorController {
     @ApiResponse(responseCode = "400", description = "Неверный запрос — некорректные данные в LoanStatementRequestDto")
     @PostMapping("/offers")
     public ResponseEntity<List<LoanOfferDto>> getLoanOffers(@RequestBody LoanStatementRequestDto request) {
-        try {
-            log.info("POST request {} path {}", request, "/calculator/offers");
-            List<LoanOfferDto> offers = calculationService.calculateOffers(request);
-            log.info("POST response {}", new ResponseEntity<>(offers, HttpStatus.OK));
-            return ResponseEntity.ok(offers);
-        } catch (IllegalArgumentException ex) {
-            log.error("IllegalArgumentException error {} ", ex.getMessage());
-            return ResponseEntity.badRequest().build();
-        }
+        log.info("POST request {} path {}", request, "/calculator/offers");
+        return calculationService.calculateOffers(request);
     }
 
     /**
@@ -56,14 +49,6 @@ public class CalculatorControllerImpl implements CalculatorController {
     @ApiResponse(responseCode = "400", description = "Неверный запрос — некорректные данные в ScoringDataDto")
     @PostMapping("/calc")
     public ResponseEntity<CreditDto> calculateCredit(@RequestBody ScoringDataDto data) {
-        try {
-            log.info("POST request {} path {}", data, "/calculator/calc");
-            CreditDto credit = calculationService.calculateCredit(data);
-            log.info("POST response {}", new ResponseEntity<>(credit, HttpStatus.OK));
-            return ResponseEntity.ok(credit);
-        } catch (IllegalArgumentException ex) {
-            log.info("IllegalArgumentException error {} ", ex.getMessage());
-            return ResponseEntity.badRequest().build();
-        }
+        return calculationService.calculateCredit(data);
     }
 }

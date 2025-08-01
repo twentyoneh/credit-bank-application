@@ -1,10 +1,10 @@
 package ru.kalinin.deal.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import ru.kalinin.common.dto.*;
@@ -15,8 +15,9 @@ import ru.kalinin.deal.models.enums.CreditStatus;
 import ru.kalinin.deal.repositories.ClientRepository;
 import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
+import ru.kalinin.deal.util.ClientMapper;
+import ru.kalinin.deal.util.ScoringDataMapper;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -29,40 +30,36 @@ public class DealServiceImpl implements DealService {
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
     private final ObjectMapper objectMapper;
+    private final ClientMapper clientMapper;
+    private final ScoringDataMapper scoringDataMapper;
 
     private final RestClient restClient = RestClient.builder()
             .baseUrl("http://localhost:8080")
             .defaultHeader("Content-Type", "application/json")
             .build();
 
-    /**
-     * Создаёт нового клиента и заявку, отправляет запрос на микросервис-калькулятор для получения кредитных предложений.
-     * Сохраняет данные в базу, обрабатывает ответ и возвращает список предложений.
-     *
-     * @param request параметры заявки на кредит
-     * @return список кредитных предложений
-     */
+    ///deal/statement
     @Override
-    public List<LoanOfferDto> createStatement(LoanStatementRequestDto request) {
-        Client client = new Client();
-        client.setLastName(request.getLastName());
-        client.setFirstName(request.getFirstName());
-        client.setMiddleName(request.getMiddleName());
-        client.setBirthDate(request.getBirthdate());
-        client.setEmail(request.getEmail());
-        client.setDependentAmount(request.getAmount());
-        Passport passport = Passport.builder()
-                .series(request.getPassportSeries())
-                .number(request.getPassportNumber())
-                .build();
-        client.setPassport(passport);
-        client.setAccountNumber(UUID.randomUUID().toString());
-
+    public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto request) {
+        Client client = clientMapper.toClient(request);
         clientRepository.save(client);
+        log.info("Client {} created", client.getId());
+
+        StatusHistory statusHistory = StatusHistory.builder()
+                .status(String.valueOf(ApplicationStatus.PREAPPROVAL))
+                .time(LocalDateTime.now())
+                .changeType(ChangeType.AUTOMATIC)
+                .build();
 
         Statement statement = new Statement();
         statement.setClient(client);
+        statement.setCreationDate(LocalDateTime.now());
+        statement.setStatus(String.valueOf(ApplicationStatus.PREAPPROVAL));
+        statement.getStatusHistory().add(statusHistory);
         statementRepository.save(statement);
+        log.info("Statement {} created", statement.getId());
+
+
 
         // Отправка POST запроса на /calculator/offers МС калькулятор
         List<LoanOfferDto> offers;
@@ -74,21 +71,20 @@ public class DealServiceImpl implements DealService {
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<LoanOfferDto>>() {
                     });
-
-            if(offers == null || offers.isEmpty()){
-                throw new RuntimeException("Ответ от микросервиса калькулятора пустой");
-            }
         }
         catch (Exception e){
             log.error("Ошибка при вызове микросервиса калькулятора /calculator/offers: {}", e.getMessage());
             throw new RuntimeException("Не удалось получить ответ от микросервиса калькулятора", e);
+        }
+        if(offers == null || offers.isEmpty()){
+            return ResponseEntity.noContent().build();
         }
 
         log.info("Успешно полученны оферы");
         for (LoanOfferDto offer : offers) {
             offer.setStatementId(statement.getId());
         }
-        return offers;
+        return ResponseEntity.ok(offers);
     }
 
     /**
@@ -97,7 +93,7 @@ public class DealServiceImpl implements DealService {
      * @param request Выбранный оффер, который пришёл из api /deal/statement
      */
     @Override
-    public void selectStatement(LoanOfferDto request) {
+    public ResponseEntity<Void> selectStatement(LoanOfferDto request) {
         log.info("Получен запрос на выбор предложения: {}", request);
 
         Statement statement = statementRepository.findById(request.getStatementId())
@@ -109,13 +105,13 @@ public class DealServiceImpl implements DealService {
         log.info("Найдена заявка: {}", statement.getId());
 
         StatusHistory statusHistory = StatusHistory.builder()
-                .status("LoanOffer " + request + "was select")
+                .status(String.valueOf(ApplicationStatus.APPROVED))
                 .time(LocalDateTime.now())
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
 
-        statement.setStatusHistory(List.of(statusHistory));
-        statement.setStatus(ApplicationStatus.APPROVED);
+        statement.getStatusHistory().add(statusHistory);
+        statement.setStatus(String.valueOf(ApplicationStatus.APPROVED));
         statement.setAppliedOffer(request);
 
         Credit credit = Credit.builder()
@@ -127,7 +123,6 @@ public class DealServiceImpl implements DealService {
                 .salaryClient(request.getIsSalaryClient())
                 .build();
 
-        statement.setCredit(credit);
         try {
             creditRepository.save(credit);
 
@@ -136,7 +131,6 @@ public class DealServiceImpl implements DealService {
             log.error("Ошибка при сохранении Credit {} в базу данных: {}", credit.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при сохранении Credit в базу данных", e);
         }
-
         statement.setCredit(credit);
 
         try {
@@ -148,6 +142,7 @@ public class DealServiceImpl implements DealService {
             log.error("Ошибка при сохранении заявки {} в базу данных: {}", statement.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при сохранении заявки в базу данных", e);
         }
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -159,36 +154,19 @@ public class DealServiceImpl implements DealService {
      * @param requestDto данные для завершения регистрации и скоринга
      */
     @Override
-    public void finishRegistrationAndCalculateCredit(String statementId, FinishRegistrationRequestDto requestDto) {
+    public ResponseEntity<Void> finishRegistrationAndCalculateCredit(String statementId, FinishRegistrationRequestDto requestDto) {
         Statement statement = statementRepository.findById(UUID.fromString(statementId))
                 .orElseThrow(() -> new RuntimeException("Заявка не найдена по id: " + statementId));
         log.info("Найдена заявка: {}", statementId);
 
         Client client = statement.getClient();
-        ScoringDataDto scoringDataDto = new ScoringDataDto();
-        scoringDataDto.setAmount(BigDecimal.valueOf(requestDto.getDependentAmount()));
-        scoringDataDto.setTerm(statement.getCredit().getTerm());
-        scoringDataDto.setFirstName(client.getFirstName());
-        scoringDataDto.setLastName(client.getLastName());
-        scoringDataDto.setMiddleName(client.getMiddleName());
-        scoringDataDto.setGender(requestDto.getGender());
-        scoringDataDto.setBirthdate(client.getBirthDate());
-        scoringDataDto.setPassportSeries(client.getPassport().getSeries());
-        scoringDataDto.setPassportNumber(client.getPassport().getNumber());
-        scoringDataDto.setPassportIssueDate(requestDto.getPassportIssueDate());
-        scoringDataDto.setPassportIssueBranch(requestDto.getPassportIssueBrach());
-        scoringDataDto.setMaritalStatus(requestDto.getMaritalStatus());
-        scoringDataDto.setDependentAmount(requestDto.getDependentAmount());
-        scoringDataDto.setEmployment(requestDto.getEmployment());
-        scoringDataDto.setAccountNumber(client.getAccountNumber());
-        scoringDataDto.setIsInsuranceEnabled(statement.getCredit().getInsuranceEnabled());
-        scoringDataDto.setIsSalaryClient(statement.getCredit().getSalaryClient());
+        ScoringDataDto scoringDataDto = scoringDataMapper.toScoringDataDto(client, statement, requestDto);
 
         log.info("Создана ScoringDto: {}", scoringDataDto);
 
         CreditDto creditDto;
 
-        String json = new String();
+        String json = "";
         try {
             json = objectMapper.writeValueAsString(scoringDataDto);
             log.info("Сериализованный объект ScoringDataDto: {}", json);
@@ -253,7 +231,6 @@ public class DealServiceImpl implements DealService {
             log.error("Ошибка при обновлении заявки {}: {}", statement.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при обновлении заявки после завершения регистрации", e);
         }
+        return ResponseEntity.ok().build();
     }
-
-
 }

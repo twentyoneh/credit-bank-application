@@ -1,5 +1,6 @@
 package ru.kalinin.deal.services;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.kalinin.common.dto.FinishRegistrationRequestDto;
@@ -11,8 +12,8 @@ import java.util.List;
 
 public interface DealService {
 
-    public List<LoanOfferDto> createStatement(LoanStatementRequestDto request);
-    public void selectStatement(LoanOfferDto request);
-    public void finishRegistrationAndCalculateCredit(String statementId,
+    public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto request);
+    public ResponseEntity<Void> selectStatement(LoanOfferDto request);
+    public ResponseEntity<Void> finishRegistrationAndCalculateCredit(String statementId,
                                                      FinishRegistrationRequestDto requestDto);
 }

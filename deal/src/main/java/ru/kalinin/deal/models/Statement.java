@@ -32,11 +32,10 @@ public class Statement {
 
     @OneToOne
     @JoinColumn(name = "credit_id")
-    private Credit  credit;  //FK1
+    private Credit credit;  //FK1
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private ApplicationStatus status;
+    private String status;
 
     @Column(name = "creation_date")
     private LocalDateTime creationDate;
