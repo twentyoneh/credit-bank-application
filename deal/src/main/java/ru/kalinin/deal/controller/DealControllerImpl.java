@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.kalinin.common.dto.FinishRegistrationRequestDto;
 import ru.kalinin.common.dto.LoanOfferDto;
 import ru.kalinin.common.dto.LoanStatementRequestDto;
+import ru.kalinin.deal.kafka.KafkaProducer;
 import ru.kalinin.deal.services.DealService;
 
 import java.util.List;
@@ -19,6 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DealControllerImpl implements DealController {
     private final DealService dealService;
+
+    private final KafkaProducer kafkaProducer;
 
     @Override
     @PostMapping("/statement")
@@ -44,6 +47,28 @@ public class DealControllerImpl implements DealController {
             @RequestBody FinishRegistrationRequestDto requestDto) {
         log.info("POST request {} statementId {} path {}", requestDto, statementId, "deal/calculate/{statementId}");
         return dealService.finishRegistrationAndCalculateCredit(statementId, requestDto);
+    }
+
+    @Override
+    @PostMapping("/document/{statementId}/send")
+    public ResponseEntity<Void> sendDocOnEmail(
+            @PathVariable String statementId) {
+        kafkaProducer.sendMessage(statementId);
+        return null;
+    }
+
+    @Override
+    @PostMapping("/document/{statementId}/sign")
+    public ResponseEntity<Void> signDocOnEmail(
+            @PathVariable String statementId) {
+        return null;
+    }
+
+    @Override
+    @PostMapping("/document/{statementId}/code")
+    public ResponseEntity<Void> codeDocOnEmail(
+            @PathVariable String statementId) {
+        return null;
     }
 
 

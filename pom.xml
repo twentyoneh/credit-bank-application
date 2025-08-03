@@ -13,10 +13,9 @@
 	<modules>
 		<module>common</module>
 		<module>calculator</module>
-		 <module>deal</module>
-		 <module>statement</module>
+		<module>deal</module>
+		<module>statement</module>
         <module>dossier</module>
-        <!-- <module>dossier</module> -->
 		<!-- <module>gateway</module> -->
 	</modules>
 	<licenses>
