@@ -17,15 +17,20 @@ import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
 import ru.kalinin.deal.util.ClientMapper;
 import ru.kalinin.deal.util.ScoringDataMapper;
+import ru.kalinin.dossier.dto.EmailMessage;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static ru.kalinin.dossier.enums.Theme.STATEMENT_DENIED;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class DealServiceImpl implements DealService {
+
+    private final KafkaMessagingService kafkaMessagingService;
     private final ClientRepository clientRepository;
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
@@ -84,6 +89,14 @@ public class DealServiceImpl implements DealService {
         for (LoanOfferDto offer : offers) {
             offer.setStatementId(statement.getId());
         }
+
+        var emailMessage = EmailMessage.builder()
+                .address(statement.getClient().getEmail())
+                .theme(STATEMENT_DENIED)
+                .statementId(statement.getId().toString())
+                .build();
+        kafkaMessagingService.("statement-denied", emailMessage);
+
         return ResponseEntity.ok(offers);
     }
 
