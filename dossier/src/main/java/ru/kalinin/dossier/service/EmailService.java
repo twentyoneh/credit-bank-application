@@ -1,8 +1,8 @@
 package ru.kalinin.dossier.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -22,8 +22,8 @@ public class EmailService {
 
     private final JavaMailSender emailSender;
     private final FileCreator fileCreator;
-//    @Value("${spring.mail.username}")
-    private String fromEmail = "didiwot@yadnex.ru";
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
 
     @Async

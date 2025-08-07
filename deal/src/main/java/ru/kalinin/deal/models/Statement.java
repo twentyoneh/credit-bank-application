@@ -9,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import ru.kalinin.common.dto.LoanOfferDto;
 import ru.kalinin.deal.models.enums.ApplicationStatus;
+import ru.kalinin.deal.models.enums.Status;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,8 +35,9 @@ public class Statement {
     @JoinColumn(name = "credit_id")
     private Credit credit;  //FK1
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private Status status;
 
     @Column(name = "creation_date")
     private LocalDateTime creationDate;

@@ -3,6 +3,7 @@ package ru.kalinin.deal.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.metrics.Stat;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,18 +13,19 @@ import ru.kalinin.deal.models.*;
 import ru.kalinin.deal.models.enums.ApplicationStatus;
 import ru.kalinin.deal.models.enums.ChangeType;
 import ru.kalinin.deal.models.enums.CreditStatus;
+import ru.kalinin.deal.models.enums.Status;
 import ru.kalinin.deal.repositories.ClientRepository;
 import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
 import ru.kalinin.deal.util.ClientMapper;
 import ru.kalinin.deal.util.ScoringDataMapper;
-import ru.kalinin.dossier.dto.EmailMessage;
+import ru.kalinin.deal.dto.EmailMessage;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static ru.kalinin.dossier.enums.Theme.STATEMENT_DENIED;
+import static ru.kalinin.deal.models.enums.Theme.STATEMENT_DENIED;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -51,7 +53,7 @@ public class DealServiceImpl implements DealService {
         log.info("Client {} created", client.getId());
 
         StatusHistory statusHistory = StatusHistory.builder()
-                .status(String.valueOf(ApplicationStatus.PREAPPROVAL))
+                .status(Status.PREAPPROVAL)
                 .time(LocalDateTime.now())
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
@@ -59,12 +61,10 @@ public class DealServiceImpl implements DealService {
         Statement statement = new Statement();
         statement.setClient(client);
         statement.setCreationDate(LocalDateTime.now());
-        statement.setStatus(String.valueOf(ApplicationStatus.PREAPPROVAL));
+        statement.setStatus(Status.PREAPPROVAL);
         statement.getStatusHistory().add(statusHistory);
         statementRepository.save(statement);
         log.info("Statement {} created", statement.getId());
-
-
 
         // Отправка POST запроса на /calculator/offers МС калькулятор
         List<LoanOfferDto> offers;
@@ -95,7 +95,7 @@ public class DealServiceImpl implements DealService {
                 .theme(STATEMENT_DENIED)
                 .statementId(statement.getId().toString())
                 .build();
-        kafkaMessagingService.("statement-denied", emailMessage);
+        kafkaMessagingService.sendMessage("create-documents", emailMessage);
 
         return ResponseEntity.ok(offers);
     }
@@ -118,13 +118,13 @@ public class DealServiceImpl implements DealService {
         log.info("Найдена заявка: {}", statement.getId());
 
         StatusHistory statusHistory = StatusHistory.builder()
-                .status(String.valueOf(ApplicationStatus.APPROVED))
+                .status(Status.APPROVED)
                 .time(LocalDateTime.now())
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
 
         statement.getStatusHistory().add(statusHistory);
-        statement.setStatus(String.valueOf(ApplicationStatus.APPROVED));
+        statement.setStatus(Status.APPROVED);
         statement.setAppliedOffer(request);
 
         Credit credit = Credit.builder()
@@ -231,7 +231,7 @@ public class DealServiceImpl implements DealService {
 
         try {
             StatusHistory statusHistory = StatusHistory.builder()
-                    .status("FinishRegistration " + requestDto + "was select")
+                    .status(Status.CC_APPROVED)
                     .time(LocalDateTime.now())
                     .changeType(ChangeType.AUTOMATIC)
                     .build();

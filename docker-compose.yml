@@ -1,6 +1,6 @@
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:6.2.10
+    image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
     healthcheck:
       test: [ "CMD", "nc", "-vz", "localhost", "2181" ]
@@ -42,7 +42,7 @@ services:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
     ports:
-      - 8090:8090
+      - 8090:8080
     restart: always
     depends_on:
       kafka:
