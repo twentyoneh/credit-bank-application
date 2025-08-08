@@ -6,10 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.kalinin.deal.exception.VerifySesCodeException;
 import ru.kalinin.deal.models.enums.Status;
-import ru.kalinin.deal.models.enums.Theme;
+import ru.kalinin.dossier.enums.Theme;
 import ru.kalinin.deal.repositories.StatementRepository;
 import ru.kalinin.deal.util.SesCodeGenerator;
-import ru.kalinin.deal.dto.EmailMessage;
+import ru.kalinin.dossier.dto.EmailMessage;
 import ru.kalinin.deal.models.Statement;
 
 import java.time.LocalDateTime;
@@ -19,8 +19,8 @@ import static ru.kalinin.deal.models.enums.ChangeType.AUTOMATIC;
 import static ru.kalinin.deal.models.enums.CreditStatus.ISSUED;
 import static ru.kalinin.deal.models.enums.Status.DOCUMENT_SIGNED;
 import static ru.kalinin.deal.models.enums.Status.PREPARE_DOCUMENTS;
-import static ru.kalinin.deal.models.enums.Theme.SEND_DOCUMENTS;
-import static ru.kalinin.deal.models.enums.Theme.SEND_SES;
+import static ru.kalinin.dossier.enums.Theme.SEND_DOCUMENTS;
+import static ru.kalinin.dossier.enums.Theme.SEND_SES;
 
 @Slf4j
 @RequiredArgsConstructor

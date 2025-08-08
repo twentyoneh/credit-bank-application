@@ -55,7 +55,7 @@ public class KafkaMessagingService {
     }
     @KafkaListener(topics = "send-ses",
             groupId = "${spring.kafka.consumer.group-id}",
-            properties = {"spring.json.value.default.type=ru.neoflex.dossier.dto.EmailMessage"})
+            properties = {"spring.json.value.default.type=ru.kalinin.dossier.dto.EmailMessage"})
     public void sendEmailWithSendSes(EmailMessage emailMessage) {
         log.info(MESSAGE_CONSUMED, emailMessage);
 
@@ -68,7 +68,7 @@ public class KafkaMessagingService {
 
     @KafkaListener(topics = "credit-issued",
             groupId = "${spring.kafka.consumer.group-id}",
-            properties = {"spring.json.value.default.type=ru.neoflex.dossier.dto.EmailMessage"})
+            properties = {"spring.json.value.default.type=ru.kalinin.dossier.dto.EmailMessage"})
     public void sendEmailWithCreditIssued(EmailMessage emailMessage) {
         log.info(MESSAGE_CONSUMED, emailMessage);
 
@@ -78,7 +78,7 @@ public class KafkaMessagingService {
 
     @KafkaListener(topics = "statement-denied",
             groupId = "${spring.kafka.consumer.group-id}",
-            properties = {"spring.json.value.default.type=ru.neoflex.dossier.dto.EmailMessage"})
+            properties = {"spring.json.value.default.type=ru.kalinin.dossier.dto.EmailMessage"})
     public void sendEmailWithStatementDenied(EmailMessage emailMessage) {
         log.info(MESSAGE_CONSUMED, emailMessage);
 

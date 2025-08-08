@@ -19,13 +19,13 @@ import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
 import ru.kalinin.deal.util.ClientMapper;
 import ru.kalinin.deal.util.ScoringDataMapper;
-import ru.kalinin.deal.dto.EmailMessage;
+import ru.kalinin.dossier.dto.EmailMessage;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static ru.kalinin.deal.models.enums.Theme.STATEMENT_DENIED;
+import static ru.kalinin.dossier.enums.Theme.STATEMENT_DENIED;
 
 @Slf4j
 @RequiredArgsConstructor
