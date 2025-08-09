@@ -6,7 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <changeSet  id="create-client-table"  author="twentyoneh">
-        <createTable  tableName="client">
+        <createTable  tableName="client" ifNotExists="true">
             <column name="client_id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>

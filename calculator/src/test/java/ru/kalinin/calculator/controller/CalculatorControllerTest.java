@@ -55,7 +55,7 @@ public class CalculatorControllerTest {
         // Проверяет, что при корректном запросе возвращается список из 4 предложений и статус 200
         LoanStatementRequestDto request = getValidLoanRequest();
         List<LoanOfferDto> offers = List.of(new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto());
-        when(service.calculateOffers(request)).thenReturn(offers);
+        when(service.calculateOffers(request)).thenReturn((ResponseEntity<List<LoanOfferDto>>) offers);
 
         ResponseEntity<List<LoanOfferDto>> response = controller.getLoanOffers(request);
         assertEquals(200, response.getStatusCodeValue());
@@ -79,7 +79,7 @@ public class CalculatorControllerTest {
         ScoringDataDto data = getValidScoringData();
         CreditDto credit = new CreditDto();
         credit.setAmount(data.getAmount());
-        when(service.calculateCredit(data)).thenReturn(credit);
+//        when(service.calculateCredit(data)).thenReturn(credit);
 
         ResponseEntity<CreditDto> response = controller.calculateCredit(data);
         assertEquals(200, response.getStatusCodeValue());
