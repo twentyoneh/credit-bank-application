@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.kalinin.deal.models.enums.ChangeType;
+import ru.kalinin.deal.models.enums.Status;
 
 import java.time.LocalDateTime;
 
@@ -16,8 +17,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class StatusHistory {
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status;
+    private Status status;
 
     @Column(name = "time", nullable = false)
     private LocalDateTime time;

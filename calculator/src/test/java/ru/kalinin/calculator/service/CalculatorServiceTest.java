@@ -61,7 +61,7 @@ public class CalculatorServiceTest {
     void calculateOffers_returnsFourOffers() {
         // Проверяет, что метод calculateOffers возвращает 4 предложения по кредиту с правильной суммой
         LoanStatementRequestDto request = getValidLoanRequest();
-        List<LoanOfferDto> offers = service.calculateOffers(request);
+        List<LoanOfferDto> offers = service.calculateOffers(request).getBody();
         assertEquals(4, offers.size());
         assertTrue(offers.stream().allMatch(o -> o.getRequestedAmount().equals(request.getAmount())));
     }
@@ -72,7 +72,7 @@ public class CalculatorServiceTest {
     void calculateCredit_validData_returnsCreditDto() {
         // Проверяет, что при корректных данных метод calculateCredit возвращает корректный объект кредита
         ScoringDataDto data = getValidScoringData();
-        CreditDto credit = service.calculateCredit(data);
+        CreditDto credit = service.calculateCredit(data).getBody();
         assertNotNull(credit);
         assertEquals(data.getAmount(), credit.getAmount());
         assertEquals(data.getTerm(), credit.getTerm());

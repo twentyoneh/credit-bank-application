@@ -47,7 +47,7 @@ public class ScoringDataDto {
     @Schema(description = "Семейное положение", example = "MARRIED")
     private MaritalStatus maritalStatus;
 
-    @Schema(description = "Количество иждивенцев", example = "2")
+    @Schema(description = "Запрашиваемая сумма кредита", example = "2")
     private Integer dependentAmount;
 
     @Schema(description = "Информация о трудоустройстве")
