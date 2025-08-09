@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.kalinin.deal.dto.StatementDto;
 import ru.kalinin.deal.models.Statement;
@@ -28,28 +29,20 @@ public class AdminService {
     private final StatementMapper statementMapper;
 
 
-    public void saveStatementStatus(Statement statement, Status status, ChangeType changeType) {
-        log.info("Save new statement status = {}", status);
-
-        statement.setStatus(status);
-        log.info("Status saved in statement");
-
-        var statusHistory = new StatusHistory(status, LocalDateTime.now(), changeType);
-        List<StatusHistory> history = statement.getStatusHistory();
-        history.add(statusHistory);
-        log.info("Status saved in history: {}", history.stream()
-                .map(StatusHistory::toString)
-                .collect(Collectors.joining(", ")));
+    public ResponseEntity<List<StatementDto>> findAllStatements() {
+        return ResponseEntity.ok(statementRepository.findAll().stream()
+                .map(statementMapper::toStatementDto)
+                .collect(Collectors.toList()));
     }
 
-    public void saveStatementStatus(String statementId, Status status, ChangeType changeType) {
-        var statement = findStatementById(UUID.fromString(statementId));
-        saveStatementStatus(statement, status, changeType);
-    }
-
-    public StatementDto findStatementById(String statementId) {
-        var statement = findStatementById(UUID.fromString(statementId));
-        return statementMapper.toStatementDto(statement);
+    public ResponseEntity<StatementDto> findStatementById(String statementId) {
+        try {
+            var statement = findStatementById(UUID.fromString(statementId));
+            return ResponseEntity.ok(statementMapper.toStatementDto(statement));
+        } catch (EntityNotFoundException ex) {
+            log.error("Ошибка поиска заявления: {}", ex.getMessage());
+            return ResponseEntity.noContent().build();
+        }
     }
 
     private Statement findStatementById(UUID statementId) {

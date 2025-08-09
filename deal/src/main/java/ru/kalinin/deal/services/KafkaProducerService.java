@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.kalinin.deal.exception.VerifySesCodeException;
+import ru.kalinin.deal.models.StatusHistory;
+import ru.kalinin.deal.models.enums.ChangeType;
 import ru.kalinin.deal.models.enums.Status;
 import ru.kalinin.dossier.enums.Theme;
 import ru.kalinin.deal.repositories.StatementRepository;
@@ -13,7 +15,9 @@ import ru.kalinin.dossier.dto.EmailMessage;
 import ru.kalinin.deal.models.Statement;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static ru.kalinin.deal.models.enums.ChangeType.AUTOMATIC;
 import static ru.kalinin.deal.models.enums.CreditStatus.ISSUED;
@@ -28,14 +32,13 @@ import static ru.kalinin.dossier.enums.Theme.SEND_SES;
 public class KafkaProducerService {
     private final KafkaMessagingService kafkaMessagingService;
     private final StatementRepository statementRepository;
-    private final AdminService adminService;
 
     public void sendDocuments(String statementId) {
         log.info("Create kafka message to send documents for statementId = {}", statementId);
 
         var statement = findStatementById(UUID.fromString(statementId));
 
-        adminService.saveStatementStatus(statement, PREPARE_DOCUMENTS, AUTOMATIC);
+        saveStatementStatus(statement, PREPARE_DOCUMENTS, AUTOMATIC);
 
         var emailMessage = EmailMessage.builder()
                 .address(statement.getClient().getEmail())
@@ -72,11 +75,11 @@ public class KafkaProducerService {
             throw new VerifySesCodeException("Ses code is invalid.");
         }
 
-        adminService.saveStatementStatus(statement, DOCUMENT_SIGNED, AUTOMATIC);
+        saveStatementStatus(statement, DOCUMENT_SIGNED, AUTOMATIC);
         log.info("Credit documents signed.");
         statement.setSignDate(LocalDateTime.now());
         statement.getCredit().setCreditStatus(ISSUED);
-        adminService.saveStatementStatus(statement, Status.CREDIT_ISSUED, AUTOMATIC);
+        saveStatementStatus(statement, Status.CREDIT_ISSUED, AUTOMATIC);
         log.info("Credit issued.");
 
         var emailMessage = EmailMessage.builder()
@@ -92,6 +95,16 @@ public class KafkaProducerService {
                 new EntityNotFoundException(String.format("Statement with id %s wasn't found", statementId)));
         log.info("Statement found = {}", statement);
         return statement;
+    }
+
+    private void saveStatementStatus(Statement statement, Status status, ChangeType changeType) {
+        statement.setStatus(status);
+        var statusHistory = new StatusHistory(status, LocalDateTime.now(), changeType);
+        List<StatusHistory> history = statement.getStatusHistory();
+        history.add(statusHistory);
+        log.info("Status saved in history: {}", history.stream()
+                .map(StatusHistory::toString)
+                .collect(Collectors.joining(", ")));
     }
 
 
