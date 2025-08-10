@@ -3,6 +3,7 @@ package ru.kalinin.deal.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.metrics.Stat;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,20 +13,29 @@ import ru.kalinin.deal.models.*;
 import ru.kalinin.deal.models.enums.ApplicationStatus;
 import ru.kalinin.deal.models.enums.ChangeType;
 import ru.kalinin.deal.models.enums.CreditStatus;
+import ru.kalinin.deal.models.enums.Status;
 import ru.kalinin.deal.repositories.ClientRepository;
 import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
 import ru.kalinin.deal.util.ClientMapper;
 import ru.kalinin.deal.util.ScoringDataMapper;
+import ru.kalinin.dossier.dto.EmailMessage;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.List;
 import java.util.UUID;
+
+import static ru.kalinin.dossier.enums.Theme.*;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class DealServiceImpl implements DealService {
+
+    private final KafkaMessagingService kafkaMessagingService;
     private final ClientRepository clientRepository;
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
@@ -38,31 +48,27 @@ public class DealServiceImpl implements DealService {
             .defaultHeader("Content-Type", "application/json")
             .build();
 
-    ///deal/statement
     @Override
     public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto request) {
         Client client = clientMapper.toClient(request);
         clientRepository.save(client);
+        List<LoanOfferDto> offers;
         log.info("Client {} created", client.getId());
 
         StatusHistory statusHistory = StatusHistory.builder()
-                .status(String.valueOf(ApplicationStatus.PREAPPROVAL))
+                .status(Status.PREAPPROVAL)
                 .time(LocalDateTime.now())
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
 
-        Statement statement = new Statement();
-        statement.setClient(client);
-        statement.setCreationDate(LocalDateTime.now());
-        statement.setStatus(String.valueOf(ApplicationStatus.PREAPPROVAL));
-        statement.getStatusHistory().add(statusHistory);
+        var statement = Statement.builder()
+                .client(client)
+                .creationDate(LocalDateTime.now())
+                .status(Status.PREAPPROVAL)
+                .statusHistory(List.of(statusHistory))
+                .build();
         statementRepository.save(statement);
         log.info("Statement {} created", statement.getId());
-
-
-
-        // Отправка POST запроса на /calculator/offers МС калькулятор
-        List<LoanOfferDto> offers;
 
         try {
             offers = restClient.post()
@@ -77,6 +83,12 @@ public class DealServiceImpl implements DealService {
             throw new RuntimeException("Не удалось получить ответ от микросервиса калькулятора", e);
         }
         if(offers == null || offers.isEmpty()){
+            var emailMessage = EmailMessage.builder()
+                    .address(statement.getClient().getEmail())
+                    .theme(STATEMENT_DENIED)
+                    .statementId(statement.getId().toString())
+                    .build();
+            kafkaMessagingService.sendMessage("statement-denied", emailMessage);
             return ResponseEntity.noContent().build();
         }
 
@@ -84,6 +96,7 @@ public class DealServiceImpl implements DealService {
         for (LoanOfferDto offer : offers) {
             offer.setStatementId(statement.getId());
         }
+
         return ResponseEntity.ok(offers);
     }
 
@@ -105,13 +118,13 @@ public class DealServiceImpl implements DealService {
         log.info("Найдена заявка: {}", statement.getId());
 
         StatusHistory statusHistory = StatusHistory.builder()
-                .status(String.valueOf(ApplicationStatus.APPROVED))
+                .status(Status.APPROVED)
                 .time(LocalDateTime.now())
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
 
         statement.getStatusHistory().add(statusHistory);
-        statement.setStatus(String.valueOf(ApplicationStatus.APPROVED));
+        statement.setStatus(Status.APPROVED);
         statement.setAppliedOffer(request);
 
         Credit credit = Credit.builder()
@@ -142,6 +155,14 @@ public class DealServiceImpl implements DealService {
             log.error("Ошибка при сохранении заявки {} в базу данных: {}", statement.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при сохранении заявки в базу данных", e);
         }
+
+        var emailMessage = EmailMessage.builder()
+                .address(statement.getClient().getEmail())
+                .theme(FINISH_REGISTRATION)
+                .statementId(String.valueOf(request.getStatementId()))
+                .build();
+        kafkaMessagingService.sendMessage("finish-registration", emailMessage);
+
         return ResponseEntity.ok().build();
     }
 
@@ -163,7 +184,6 @@ public class DealServiceImpl implements DealService {
         ScoringDataDto scoringDataDto = scoringDataMapper.toScoringDataDto(client, statement, requestDto);
 
         log.info("Создана ScoringDto: {}", scoringDataDto);
-
         CreditDto creditDto;
 
         String json = "";
@@ -218,7 +238,7 @@ public class DealServiceImpl implements DealService {
 
         try {
             StatusHistory statusHistory = StatusHistory.builder()
-                    .status("FinishRegistration " + requestDto + "was select")
+                    .status(Status.CC_APPROVED)
                     .time(LocalDateTime.now())
                     .changeType(ChangeType.AUTOMATIC)
                     .build();
@@ -227,10 +247,24 @@ public class DealServiceImpl implements DealService {
 
             statementRepository.save(statement);
             log.info("Заявка {} успешно обновлена после завершения регистрации", statement.getId());
+
+            var emailMessage = EmailMessage.builder()
+                    .address(statement.getClient().getEmail())
+                    .theme(CREATE_DOCUMENTS)
+                    .statementId(statementId)
+                    .build();
+            kafkaMessagingService.sendMessage("create-documents", emailMessage);
         } catch (Exception e) {
+            var emailMessage = EmailMessage.builder()
+                    .address(statement.getClient().getEmail())
+                    .theme(STATEMENT_DENIED)
+                    .statementId(statementId)
+                    .build();
+            kafkaMessagingService.sendMessage("statement-denied", emailMessage);
             log.error("Ошибка при обновлении заявки {}: {}", statement.getId(), e.getMessage(), e);
             throw new RuntimeException("Ошибка при обновлении заявки после завершения регистрации", e);
         }
         return ResponseEntity.ok().build();
     }
+
 }

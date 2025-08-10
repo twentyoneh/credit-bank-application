@@ -6,7 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <changeSet  id="create-credit-table"  author="twentyoneh">
-        <createTable tableName="credit">
+        <createTable tableName="credit" ifNotExists="true">
             <column name="credit_id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
