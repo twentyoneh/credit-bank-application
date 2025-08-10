@@ -51,4 +51,23 @@ public class AdminService {
         log.info("Statement found = {}", statement);
         return statement;
     }
+
+    public void saveStatementStatus(Statement statement, Status status, ChangeType changeType) {
+        log.info("Save new statement status = {}", status);
+
+        statement.setStatus(status);
+        log.info("Status saved in statement");
+
+        var statusHistory = new StatusHistory(status, LocalDateTime.now(), changeType);
+        List<StatusHistory> history = statement.getStatusHistory();
+        history.add(statusHistory);
+        log.info("Status saved in history: {}", history.stream()
+                .map(StatusHistory::toString)
+                .collect(Collectors.joining(", ")));
+    }
+
+    public void saveStatementStatus(String statementId, Status status, ChangeType changeType) {
+        var statement = findStatementById(UUID.fromString(statementId));
+        saveStatementStatus(statement, status, changeType);
+    }
 }

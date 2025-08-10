@@ -25,7 +25,7 @@ public class AdminController {
     /**
      * Change statement status.
      */
-    @Operation(summary = "Сохранение нового статуса заявки.")
+    @Operation(summary = "Получение всех statement.")
     @GetMapping
     public ResponseEntity<List<StatementDto>> getAllStatement() {
         return  adminService.findAllStatements();
@@ -38,5 +38,12 @@ public class AdminController {
     @GetMapping("/{statementId}")
     public ResponseEntity<StatementDto> findStatementById(@PathVariable @Parameter(required = true) String statementId) {
         return adminService.findStatementById(statementId);
+    }
+
+    @Operation(summary = "Сохранение нового статуса заявки.")
+    @PutMapping("/{statementId}/status")
+    public void saveStatementStatus(@PathVariable @Parameter(required = true) String statementId,
+                                    @RequestParam @Parameter(required = true) Status status) {
+        adminService.saveStatementStatus(statementId, status, MANUAL);
     }
 }

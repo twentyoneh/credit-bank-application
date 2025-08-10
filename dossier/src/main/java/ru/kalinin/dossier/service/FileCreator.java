@@ -26,38 +26,41 @@ public class FileCreator {
         try {
             tempFile = Files.createTempFile("loan_documents", ".txt");
 
-            try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(tempFile, StandardOpenOption.WRITE))) {
+                try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(tempFile, StandardOpenOption.WRITE))) {
 
-                writer.write("Credit Amount " + creditDto.getAmount() + "\n");
-                writer.write("Term " + creditDto.getTerm() + "\n");
-                writer.write("Monthly Payment " + creditDto.getMonthlyPayment() + "\n");
-                writer.write("Rate " + creditDto.getRate() + "\n");
-                writer.write("PSK " + creditDto.getPsk() + "\n");
+                    writer.write("Сумма кредита " + creditDto.getAmount() + "\n");
+                    writer.write("Срок " + creditDto.getTerm() + "\n");
+                    writer.write("Ежемесячный платеж " + creditDto.getMonthlyPayment() + "\n");
+                    writer.write("Ставка " + creditDto.getRate() + "\n");
+                    writer.write("ПСК " + creditDto.getPsk() + "\n");
 
-                if (Boolean.TRUE.equals(creditDto.getIsInsuranceEnabled())) {
-                    writer.write("Insurance enabled\n");
-                } else {
-                    writer.write("Insurance is not enabled\n");
-                }
-
-                if (Boolean.TRUE.equals(creditDto.getIsSalaryClient())) {
-                    writer.write("Salary Client - Yes\n\n");
-                } else {
-                    writer.write("Salary Client - No\n\n");
-                }
-
-                writer.write("Number,Date,Total Payment,Interest Payment,Debt Payment,Remaining Debt\n");
-                if (creditDto.getPaymentSchedule() != null) {
-                    for (PaymentScheduleElementDto payment : creditDto.getPaymentSchedule()) {
-                        writer.write(payment.getNumber() + ",");
-                        writer.write(payment.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + ",");
-                        writer.write(payment.getTotalPayment() + ",");
-                        writer.write(payment.getInterestPayment() + ",");
-                        writer.write(payment.getDebtPayment() + ",");
-                        writer.write(payment.getRemainingDebt() + "\n");
+                    if (Boolean.TRUE.equals(creditDto.getIsInsuranceEnabled())) {
+                        writer.write("Страхование подключено\n");
+                    } else {
+                        writer.write("Страхование не подключено\n");
                     }
-                }
-                log.info("File created successfully.");
+
+                    if (Boolean.TRUE.equals(creditDto.getIsSalaryClient())) {
+                        writer.write("Зарплатный клиент - Да\n\n");
+                    } else {
+                        writer.write("Зарплатный клиент - Нет\n\n");
+                    }
+
+                    writer.write(String.format("%-6s | %-10s | %-15s | %-20s | %-25s | %-15s%n",
+                            "Номер", "Дата", "Общий платеж", "Платеж по процентам", "Платеж по основному долгу", "Остаток долга"));
+                    if (creditDto.getPaymentSchedule() != null) {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                        for (PaymentScheduleElementDto payment : creditDto.getPaymentSchedule()) {
+                            writer.write(String.format("%-6d | %-10s | %-15.2f | %-20.2f | %-25.2f | %-15.2f%n",
+                                    payment.getNumber(),
+                                    payment.getDate().format(formatter),
+                                    payment.getTotalPayment(),
+                                    payment.getInterestPayment(),
+                                    payment.getDebtPayment(),
+                                    payment.getRemainingDebt()));
+                        }
+                    }
+                    log.info("Файл успешно создан.");
             }
         } catch (IOException exception) {
             log.error("File creating exception: " + exception.getMessage());
