@@ -6,7 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <changeSet  id="create-statement-table"  author="twentyoneh">
-        <createTable  tableName="statement">
+        <createTable  tableName="statement" ifNotExists="true">
             <column name="statement_id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>

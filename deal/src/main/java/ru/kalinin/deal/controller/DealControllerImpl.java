@@ -46,5 +46,4 @@ public class DealControllerImpl implements DealController {
         return dealService.finishRegistrationAndCalculateCredit(statementId, requestDto);
     }
 
-
 }
