@@ -59,4 +59,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         working-directory: ${{ matrix.module }}
-        run: mvn -B verify -DskipTests -Djacoco.skip=true org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=credit-bank-application
+        run: >
+          mvn -B verify -DskipTests -Djacoco.skip=true
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.organization=${{ vars.SONAR_ORG }}
+          -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY}}
