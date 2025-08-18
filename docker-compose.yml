@@ -73,3 +73,93 @@ services:
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server kafka:9092 --list
       "
+      
+  calculator:
+    build:
+      context: ./calculator
+      args:
+        JAR_FILE: target/*.jar
+    container_name: calculator
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  db:
+    image: postgres:17
+    container_name: deal-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - deal-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d postgres" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  deal:
+    build:
+      context: ./deal
+      args:
+        JAR_FILE: target/*.jar
+    container_name: deal
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postgres
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_APPLICATION_JSON: '{
+              "app.calculator.base-url":"http://calculator:8080"
+            }'
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  statement:
+    build:
+      context: ./statement
+      args:
+        JAR_FILE: target/*.jar
+    container_name: statement
+    depends_on:
+      deal:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_APPLICATION_JSON: '{
+          "app.deal.base-url":"http://deal:8081",
+          "spring.kafka.bootstrap-servers":"kafka:9092"
+        }'
+    restart: unless-stopped
+
+  dossier:
+    build:
+      context: ./dossier
+      args:
+        JAR_FILE: target/*.jar
+    container_name: dossier
+    depends_on:
+      deal:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_APPLICATION_JSON: '{
+        "app.deal.base-url":"http://deal:8081",
+        "spring.kafka.bootstrap-servers":"kafka:9092"
+      }'
+    restart: unless-stopped
+
+volumes:
+  deal-db-data:

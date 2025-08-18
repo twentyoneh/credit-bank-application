@@ -18,10 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Service
 public class StatementServiceImpl implements StatementService {
-    private final RestClient restClient = RestClient.builder()
-            .baseUrl("http://localhost:8081")
-            .defaultHeader("Content-Type", "application/json")
-            .build();
+    private final RestClient restClient;
 
     // /statement
     @Override

@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.metrics.Stat;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -19,7 +21,7 @@ import ru.kalinin.deal.repositories.CreditRepository;
 import ru.kalinin.deal.repositories.StatementRepository;
 import ru.kalinin.deal.util.ClientMapper;
 import ru.kalinin.deal.util.ScoringDataMapper;
-import ru.kalinin.dossier.dto.EmailMessage;
+import ru.kalinin.deal.dto.EmailMessage;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -28,7 +30,7 @@ import java.time.Period;
 import java.util.List;
 import java.util.UUID;
 
-import static ru.kalinin.dossier.enums.Theme.*;
+import static ru.kalinin.deal.models.enums.Theme.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -43,10 +45,7 @@ public class DealServiceImpl implements DealService {
     private final ClientMapper clientMapper;
     private final ScoringDataMapper scoringDataMapper;
 
-    private final RestClient restClient = RestClient.builder()
-            .baseUrl("http://localhost:8080")
-            .defaultHeader("Content-Type", "application/json")
-            .build();
+    private final RestClient calcClient;
 
     @Override
     public ResponseEntity<List<LoanOfferDto>> createStatement(LoanStatementRequestDto request) {
@@ -71,7 +70,7 @@ public class DealServiceImpl implements DealService {
         log.info("Statement {} created", statement.getId());
 
         try {
-            offers = restClient.post()
+            offers = calcClient.post()
                     .uri("/calculator/offers")
                     .body(request)
                     .retrieve()
@@ -195,9 +194,10 @@ public class DealServiceImpl implements DealService {
         }
 
         try {
-            creditDto = restClient.post()
+            creditDto = calcClient.post()
                     .uri("/calculator/calc")
-                    .body(json)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(scoringDataDto)
                     .retrieve()
                     .body(new ParameterizedTypeReference<CreditDto>() {
                     });
