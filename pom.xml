@@ -36,6 +36,8 @@
 		<jacoco.version>0.8.7</jacoco.version>
 		<mockito.version>5.11.0</mockito.version>
 		<springdoc.version>2.8.8</springdoc.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 	<dependencies>
 		<dependency>
