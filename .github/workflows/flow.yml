@@ -1,0 +1,58 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        module: ['common', 'calculator', 'deal', 'statement', 'dossier']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ matrix.module }}-${{ hashFiles(format('{0}/pom.xml', matrix.module)) }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build module with Maven
+        run: mvn -B -f ${{ matrix.module }}/pom.xml clean install
+
+      - name: Run tests and generate coverage report
+        if: ${{ matrix.module != 'dossier' && matrix.module != 'common' && matrix.module != 'dossier' }}
+        run: mvn -B -f ${{ matrix.module }}/pom.xml test jacoco:report
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.module != 'dossier' && matrix.module != 'common' && matrix.module != 'dossier' }}
+        uses: codecov/codecov-action@v3
+        with:
+          files: ${{ matrix.module }}/target/site/jacoco/jacoco.xml
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: SonarCloud scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        working-directory: ${{ matrix.module }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=ValentinaBuddha_java-credit-bank
