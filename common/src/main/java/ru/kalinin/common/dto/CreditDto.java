@@ -1,6 +1,5 @@
 package ru.kalinin.common.dto;
 
-import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;

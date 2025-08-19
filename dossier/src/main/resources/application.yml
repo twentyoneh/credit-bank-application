@@ -10,9 +10,11 @@ spring:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: ru.kalinin.dossier.dto.EmailMessage
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: '*'
+        spring.json.trusted.packages: ru.kalinin.**
 
   profiles:
     active: ${ACTIVE_PROFILE:dev}
@@ -48,4 +50,4 @@ logging:
     ru.neoflex.statement.feign: debug
 
 deal:
-  url: 'http://localhost:8081/deal'
+  url: 'http://deal:8081/deal'

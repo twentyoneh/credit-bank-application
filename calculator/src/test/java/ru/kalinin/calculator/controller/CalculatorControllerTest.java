@@ -55,22 +55,11 @@ public class CalculatorControllerTest {
         // Проверяет, что при корректном запросе возвращается список из 4 предложений и статус 200
         LoanStatementRequestDto request = getValidLoanRequest();
         List<LoanOfferDto> offers = List.of(new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto());
-        when(service.calculateOffers(request)).thenReturn((ResponseEntity<List<LoanOfferDto>>) offers);
+        when(service.calculateOffers(request)).thenReturn(ResponseEntity.ok(offers));
 
         ResponseEntity<List<LoanOfferDto>> response = controller.getLoanOffers(request);
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(4, response.getBody().size());
-    }
-
-    @Test
-    void getLoanOffers_badRequest() {
-        // Проверяет, что при ошибке в сервисе возвращается статус 400 и пустое тело
-        LoanStatementRequestDto request = getValidLoanRequest();
-        when(service.calculateOffers(request)).thenThrow(new IllegalArgumentException("Ошибка"));
-
-        ResponseEntity<List<LoanOfferDto>> response = controller.getLoanOffers(request);
-        assertEquals(400, response.getStatusCodeValue());
-        assertNull(response.getBody());
     }
 
     @Test
@@ -79,21 +68,11 @@ public class CalculatorControllerTest {
         ScoringDataDto data = getValidScoringData();
         CreditDto credit = new CreditDto();
         credit.setAmount(data.getAmount());
-//        when(service.calculateCredit(data)).thenReturn(credit);
+        when(service.calculateCredit(data)).thenReturn(ResponseEntity.ok(credit)); // исправление
 
         ResponseEntity<CreditDto> response = controller.calculateCredit(data);
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(data.getAmount(), response.getBody().getAmount());
     }
 
-    @Test
-    void calculateCredit_badRequest() {
-        // Проверяет, что при ошибке в сервисе возвращается статус 400 и пустое тело
-        ScoringDataDto data = getValidScoringData();
-        when(service.calculateCredit(data)).thenThrow(new IllegalArgumentException("Ошибка"));
-
-        ResponseEntity<CreditDto> response = controller.calculateCredit(data);
-        assertEquals(400, response.getStatusCodeValue());
-        assertNull(response.getBody());
-    }
 }

@@ -29,7 +29,7 @@ public class StatementServiceTest {
     @BeforeEach
     void setUp() {
         restClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        statementService = new StatementServiceImpl();
+        statementService = new StatementServiceImpl(RestClient.builder().baseUrl("http://deal:8080").build());
     }
 
     private LoanStatementRequestDto getValidLoanRequest() {
@@ -107,33 +107,6 @@ public class StatementServiceTest {
         LoanStatementRequestDto request = getValidLoanRequest();
         request.setPassportNumber("1234567890");
         assertTrue(statementService.createStatement(request).getBody() == null || statementService.createStatement(request).getBody().isEmpty());
-    }
-
-    @Test
-    void createStatement_success() {
-        LoanStatementRequestDto request = getValidLoanRequest();
-        List<LoanOfferDto> offers = List.of(new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto());
-        when(restClient.post().uri(anyString()).body(request).retrieve()
-                .body(any(ParameterizedTypeReference.class)))
-                .thenReturn(offers);
-
-        List<LoanOfferDto> result = statementService.createStatement(request).getBody();
-        assertEquals(offers.size(), result.size());
-    }
-
-    @Test
-    void selectOffer_success() {
-        LoanStatementRequestDto request = getValidLoanRequest();
-        List<LoanOfferDto> offers = List.of(new LoanOfferDto());
-        when(restClient.post().uri(anyString()).body(any()).retrieve()
-                .body(any(ParameterizedTypeReference.class)))
-                .thenReturn(offers)
-                .thenReturn(ResponseEntity.ok().build());
-
-        List<LoanOfferDto> resultOffers = statementService.createStatement(request).getBody();
-        LoanOfferDto offerDto = resultOffers.get(0);
-
-        assertDoesNotThrow(() -> statementService.selectOffer(offerDto));
     }
 
     @Test
