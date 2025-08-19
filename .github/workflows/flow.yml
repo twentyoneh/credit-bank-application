@@ -1,3 +1,4 @@
+# yaml
 name: CI Pipeline
 
 on:
@@ -30,21 +31,12 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Cache Maven packages (fallback)
-        if: ${{ always() }} # безопасно: setup-java уже кэширует, но пусть остаётся
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ matrix.module }}-${{ hashFiles(format('{0}/pom.xml', matrix.module)) }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
       - name: Build module with Maven (skip tests)
-        run: mvn -B -f ${{ matrix.module }}/pom.xml clean install -DskipTests
+        run: mvn -B -pl ${{ matrix.module }} -am clean install -DskipTests
 
       - name: Run tests and generate coverage report
         if: ${{ matrix.module != 'dossier' && matrix.module != 'common' }}
-        run: mvn -B -f ${{ matrix.module }}/pom.xml test jacoco:report
+        run: mvn -B -pl ${{ matrix.module }} -am test jacoco:report
 
       - name: Upload coverage to Codecov
         if: ${{ matrix.module != 'dossier' && matrix.module != 'common' }}
@@ -54,14 +46,33 @@ jobs:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: SonarCloud scan (no tests here)
+  sonar:
+    name: SonarCloud
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - name: Sanitize Sonar vars
+        run: |
+          echo "SONAR_ORG=$(echo "${{ vars.SONAR_ORG }}" | tr -d '[:space:]')" >> "$GITHUB_ENV"
+          echo "SONAR_PROJECT_KEY=$(echo "${{ vars.SONAR_PROJECT_KEY }}" | tr -d '[:space:]')" >> "$GITHUB_ENV"
+
+      # Запускаем анализ один раз из корня; тесты выполняются для генерации JaCoCo XML
+      - name: SonarCloud scan (root, once)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        working-directory: ${{ matrix.module }}
         run: >
-          mvn -B verify -DskipTests -Djacoco.skip=true
+          mvn -B verify
           org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
           -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.organization=${{ vars.SONAR_ORG }}
-          -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY}}
+          -Dsonar.organization=${SONAR_ORG}
+          -Dsonar.projectKey=${SONAR_PROJECT_KEY}
