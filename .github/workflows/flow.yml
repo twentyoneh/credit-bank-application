@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests and generate coverage report
         if: ${{ matrix.module != 'dossier' && matrix.module != 'common' }}
-        run: mvn -B -pl ${{ matrix.module }} -am test jacoco:report
+        run: mvn -B -pl ${{ matrix.module }} -am test org.jacoco:jacoco-maven-plugin:0.8.12:report
 
       - name: Upload coverage to Codecov
         if: ${{ matrix.module != 'dossier' && matrix.module != 'common' }}
