@@ -6,10 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.metrics.Stat;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.server.ResponseStatusException;
 import ru.kalinin.common.dto.*;
 import ru.kalinin.deal.models.*;
 import ru.kalinin.deal.models.enums.ApplicationStatus;
@@ -41,7 +43,6 @@ public class DealServiceImpl implements DealService {
     private final ClientRepository clientRepository;
     private final StatementRepository statementRepository;
     private final CreditRepository creditRepository;
-    private final ObjectMapper objectMapper;
     private final ClientMapper clientMapper;
     private final ScoringDataMapper scoringDataMapper;
 
@@ -88,7 +89,7 @@ public class DealServiceImpl implements DealService {
                     .statementId(statement.getId().toString())
                     .build();
             kafkaMessagingService.sendMessage("statement-denied", emailMessage);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(422).build();
         }
 
         log.info("Успешно полученны оферы");
@@ -111,7 +112,7 @@ public class DealServiceImpl implements DealService {
         Statement statement = statementRepository.findById(request.getStatementId())
                 .orElseThrow(() -> {
                     log.error("Заявка не найдена по id: {}", request.getStatementId());
-                    return new RuntimeException("Заявка не найдена по id: " + request.getStatementId());
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Заявка не найдена по id: " + request.getStatementId());
                 });
 
         log.info("Найдена заявка: {}", statement.getId());
@@ -176,8 +177,10 @@ public class DealServiceImpl implements DealService {
     @Override
     public ResponseEntity<Void> finishRegistrationAndCalculateCredit(String statementId, FinishRegistrationRequestDto requestDto) {
         Statement statement = statementRepository.findById(UUID.fromString(statementId))
-                .orElseThrow(() -> new RuntimeException("Заявка не найдена по id: " + statementId));
-        log.info("Найдена заявка: {}", statementId);
+                .orElseThrow(() -> {
+                    log.error("Заявка не найдена по id: {}", statementId);
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Заявка не найдена по id: " + statementId);
+                });
 
         Client client = statement.getClient();
         ScoringDataDto scoringDataDto = scoringDataMapper.toScoringDataDto(client, statement, requestDto);

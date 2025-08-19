@@ -117,7 +117,7 @@ class DealServiceImplTest {
     }
 
     @Test
-    void createStatement_noOffers_sendsDeniedEmail_andReturns204() {
+    void createStatement_noOffers_sendsDeniedEmail_andReturns422() {
         LoanStatementRequestDto req = new LoanStatementRequestDto();
         Client mappedClient = new Client();
         mappedClient.setEmail("u@example.com");
@@ -126,7 +126,7 @@ class DealServiceImplTest {
         mockOffersCall(Collections.emptyList());
 
         ResponseEntity<List<LoanOfferDto>> resp = dealService.createStatement(req);
-        assertEquals(204, resp.getStatusCodeValue());
+        assertEquals(422, resp.getStatusCodeValue());
 
         ArgumentCaptor<EmailMessage> msg = ArgumentCaptor.forClass(EmailMessage.class);
         verify(kafkaMessagingService).sendMessage(eq("statement-denied"), msg.capture());
