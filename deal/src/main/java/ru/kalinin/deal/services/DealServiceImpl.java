@@ -185,14 +185,6 @@ public class DealServiceImpl implements DealService {
         log.info("Создана ScoringDto: {}", scoringDataDto);
         CreditDto creditDto;
 
-        String json = "";
-        try {
-            json = objectMapper.writeValueAsString(scoringDataDto);
-            log.info("Сериализованный объект ScoringDataDto: {}", json);
-        } catch (Exception e) {
-            log.error("Ошибка сериализации объекта ScoringDataDto: {}", e.getMessage());
-        }
-
         try {
             creditDto = calcClient.post()
                     .uri("/calculator/calc")

@@ -3,12 +3,13 @@ package ru.kalinin.common.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Schema(description = "DTO предложения по кредиту, содержит параметры одобренного кредита")
-@Builder
+@NoArgsConstructor
 @Data
 public class LoanOfferDto {
     @Schema(description = "Идентификатор заявки", example = "550e8400-e29b-41d4-a716-446655440000")
@@ -34,4 +35,23 @@ public class LoanOfferDto {
 
     @Schema(description = "Признак, что клиент получает зарплату на наш банк", example = "false")
     private Boolean isSalaryClient;
+
+    @Builder
+    public LoanOfferDto(UUID statementId,
+                        BigDecimal requestedAmount,
+                        BigDecimal totalAmount,
+                        Integer term,
+                        BigDecimal monthlyPayment,
+                        BigDecimal rate,
+                        Boolean isInsuranceEnabled,
+                        Boolean isSalaryClient) {
+        this.statementId = statementId;
+        this.requestedAmount = requestedAmount;
+        this.totalAmount = totalAmount;
+        this.term = term;
+        this.monthlyPayment = monthlyPayment;
+        this.rate = rate;
+        this.isInsuranceEnabled = isInsuranceEnabled;
+        this.isSalaryClient = isSalaryClient;
+    }
 }

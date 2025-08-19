@@ -3,12 +3,13 @@ package ru.kalinin.common.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Schema(description = "Элемент графика платежей по кредиту")
-@Builder
+@NoArgsConstructor
 @Data
 public class PaymentScheduleElementDto {
     @Schema(description = "Номер платежа в графике", example = "1")
@@ -28,4 +29,19 @@ public class PaymentScheduleElementDto {
 
     @Schema(description = "Оставшаяся сумма основного долга после платежа", example = "486000.00")
     private BigDecimal remainingDebt;
+
+    @Builder
+    public PaymentScheduleElementDto(Integer number,
+                                     LocalDate date,
+                                     BigDecimal totalPayment,
+                                     BigDecimal interestPayment,
+                                     BigDecimal debtPayment,
+                                     BigDecimal remainingDebt) {
+        this.number = number;
+        this.date = date;
+        this.totalPayment = totalPayment;
+        this.interestPayment = interestPayment;
+        this.debtPayment = debtPayment;
+        this.remainingDebt = remainingDebt;
+    }
 }

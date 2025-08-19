@@ -54,7 +54,7 @@ public class CalculatorControllerTest {
     void getLoanOffers_success() {
         // Проверяет, что при корректном запросе возвращается список из 4 предложений и статус 200
         LoanStatementRequestDto request = getValidLoanRequest();
-        List<LoanOfferDto> offers = List.of(new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto(), new LoanOfferDto());
+        List<LoanOfferDto> offers = List.of(LoanOfferDto.builder().build(), LoanOfferDto.builder().build(), LoanOfferDto.builder().build(), LoanOfferDto.builder().build());
         when(service.calculateOffers(request)).thenReturn(ResponseEntity.ok(offers));
 
         ResponseEntity<List<LoanOfferDto>> response = controller.getLoanOffers(request);
@@ -66,8 +66,9 @@ public class CalculatorControllerTest {
     void calculateCredit_success() {
         // Проверяет, что при корректных данных возвращается объект кредита и статус 200
         ScoringDataDto data = getValidScoringData();
-        CreditDto credit = new CreditDto();
-        credit.setAmount(data.getAmount());
+        CreditDto credit = CreditDto.builder()
+                .amount(data.getAmount())
+                .build();
         when(service.calculateCredit(data)).thenReturn(ResponseEntity.ok(credit)); // исправление
 
         ResponseEntity<CreditDto> response = controller.calculateCredit(data);
