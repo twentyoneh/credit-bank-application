@@ -3,8 +3,8 @@ spring:
     name: deal
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
-    username: <YourUsername>
-    password: <YourPassword>
+    username: admin
+    password: admin
     driver-class-name: org.postgresql.Driver
   jpa:
     database: postgresql
