@@ -91,10 +91,12 @@ class DealServiceImplTest {
         mappedClient.setEmail("u@example.com");
         when(clientMapper.toClient(req)).thenReturn(mappedClient);
 
-        LoanOfferDto o1 = new LoanOfferDto();
-        o1.setTotalAmount(BigDecimal.valueOf(100));
-        LoanOfferDto o2 = new LoanOfferDto();
-        o2.setTotalAmount(BigDecimal.valueOf(200));
+        LoanOfferDto o1 = LoanOfferDto.builder()
+                .totalAmount(BigDecimal.valueOf(100))
+                .build();
+        LoanOfferDto o2 = LoanOfferDto.builder()
+                .totalAmount(BigDecimal.valueOf(200))
+                .build();
         mockOffersCall(List.of(o1, o2));
 
         ResponseEntity<List<LoanOfferDto>> resp = dealService.createStatement(req);
@@ -115,7 +117,7 @@ class DealServiceImplTest {
     }
 
     @Test
-    void createStatement_noOffers_sendsDeniedEmail_andReturns204() {
+    void createStatement_noOffers_sendsDeniedEmail_andReturns422() {
         LoanStatementRequestDto req = new LoanStatementRequestDto();
         Client mappedClient = new Client();
         mappedClient.setEmail("u@example.com");
@@ -124,7 +126,7 @@ class DealServiceImplTest {
         mockOffersCall(Collections.emptyList());
 
         ResponseEntity<List<LoanOfferDto>> resp = dealService.createStatement(req);
-        assertEquals(204, resp.getStatusCodeValue());
+        assertEquals(422, resp.getStatusCodeValue());
 
         ArgumentCaptor<EmailMessage> msg = ArgumentCaptor.forClass(EmailMessage.class);
         verify(kafkaMessagingService).sendMessage(eq("statement-denied"), msg.capture());
@@ -136,14 +138,15 @@ class DealServiceImplTest {
     @Test
     void selectStatement_success_updatesStatement_savesCredit_andSendsFinishRegistration() {
         UUID stId = UUID.randomUUID();
-        LoanOfferDto offer = new LoanOfferDto();
-        offer.setStatementId(stId);
-        offer.setTotalAmount(BigDecimal.valueOf(500_000));
-        offer.setTerm(12);
-        offer.setMonthlyPayment(BigDecimal.valueOf(43_000));
-        offer.setRate(BigDecimal.valueOf(15.5));
-        offer.setIsInsuranceEnabled(true);
-        offer.setIsSalaryClient(false);
+        LoanOfferDto offer = LoanOfferDto.builder()
+                .statementId(stId)
+                .totalAmount(BigDecimal.valueOf(500_000))
+                .term(12)
+                .monthlyPayment(BigDecimal.valueOf(43_000))
+                .rate(BigDecimal.valueOf(15.5))
+                .isInsuranceEnabled(true)
+                .isSalaryClient(false)
+                .build();
 
         Statement st = new Statement();
         st.setId(stId);
@@ -170,8 +173,9 @@ class DealServiceImplTest {
     @Test
     void selectStatement_statementNotFound_throws_andDoesNotSaveOrSend() {
         UUID stId = UUID.randomUUID();
-        LoanOfferDto offer = new LoanOfferDto();
-        offer.setStatementId(stId);
+        LoanOfferDto offer = LoanOfferDto.builder().
+                statementId(stId).
+                build();
         when(statementRepository.findById(stId)).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> dealService.selectStatement(offer));
@@ -204,17 +208,17 @@ class DealServiceImplTest {
         FinishRegistrationRequestDto finReq = new FinishRegistrationRequestDto();
         ScoringDataDto scoring = new ScoringDataDto();
         when(scoringDataMapper.toScoringDataDto(client, st, finReq)).thenReturn(scoring);
-        when(objectMapper.writeValueAsString(scoring)).thenReturn("{json}");
 
-        CreditDto creditDto = new CreditDto();
-        creditDto.setAmount(BigDecimal.valueOf(500_000));
-        creditDto.setTerm(24);
-        creditDto.setMonthlyPayment(BigDecimal.valueOf(25_000));
-        creditDto.setRate(BigDecimal.valueOf(10.5));
-        creditDto.setPsk(BigDecimal.valueOf(12.3));
-        creditDto.setIsInsuranceEnabled(true);
-        creditDto.setIsSalaryClient(true);
-        creditDto.setPaymentSchedule(List.of());
+        CreditDto creditDto = CreditDto.builder()
+            .amount(BigDecimal.valueOf(500_000))
+            .term(24)
+            .monthlyPayment(BigDecimal.valueOf(25_000))
+            .rate(BigDecimal.valueOf(10.5))
+            .psk(BigDecimal.valueOf(12.3))
+            .isInsuranceEnabled(true)
+            .isSalaryClient(true)
+            .paymentSchedule(List.of())
+            .build();
         mockCalcCall(creditDto);
 
         ResponseEntity<Void> resp = dealService.finishRegistrationAndCalculateCredit(stIdStr, finReq);
@@ -277,7 +281,7 @@ class DealServiceImplTest {
 
         when(statementRepository.findById(stId)).thenReturn(Optional.of(st));
         when(scoringDataMapper.toScoringDataDto(any(), any(), any())).thenReturn(new ScoringDataDto());
-        mockCalcCall(new CreditDto()); // валидный ответ
+        mockCalcCall(CreditDto.builder().build()); // валидный ответ
         when(statementRepository.save(any(Statement.class))).thenThrow(new RuntimeException("db error"));
 
         assertThrows(RuntimeException.class,

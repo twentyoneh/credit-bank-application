@@ -111,7 +111,7 @@ public class StatementServiceTest {
 
     @Test
     void selectOffer_exceptionThrown_runtimeException() {
-        LoanOfferDto offerDto = new LoanOfferDto();
+        LoanOfferDto offerDto = LoanOfferDto.builder().build();
 
         when(restClient.post().uri(anyString()).body(any()).retrieve()
                 .body(any(ParameterizedTypeReference.class)))

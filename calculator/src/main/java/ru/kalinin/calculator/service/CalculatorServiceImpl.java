@@ -68,7 +68,7 @@ public class CalculatorServiceImpl implements CalculatorService {
         BigDecimal psk = calculatePSK(monthlyPayment,term,amount);
 
 
-        return CreditDto.builder()
+        return ResponseEntity.ok(CreditDto.builder()
                 .amount(amount)
                 .term(term)
                 .monthlyPayment(monthlyPayment)
@@ -77,7 +77,7 @@ public class CalculatorServiceImpl implements CalculatorService {
                 .isInsuranceEnabled(data.getIsInsuranceEnabled())
                 .isSalaryClient(data.getIsSalaryClient())
                 .paymentSchedule(schedule)
-                .build();
+                .build());
     }
 
     /**

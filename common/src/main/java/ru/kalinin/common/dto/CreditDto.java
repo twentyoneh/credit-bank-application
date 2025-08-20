@@ -1,14 +1,16 @@
 package ru.kalinin.common.dto;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.NoArgsConstructor;
 
-@Data
+
 @Schema(description = "DTO с параметрами рассчитанного кредита, включая сумму, срок, ставку, ПСК, опции и график платежей")
-@Builder
+@NoArgsConstructor
 @Data
 public class CreditDto {
     @Schema(description = "Сумма кредита", example = "500000.00")
@@ -34,4 +36,23 @@ public class CreditDto {
 
     @Schema(description = "График платежей")
     private List<PaymentScheduleElementDto> paymentSchedule;
+
+    @Builder
+    public CreditDto(BigDecimal amount,
+                     Integer term,
+                     BigDecimal monthlyPayment,
+                     BigDecimal rate,
+                     BigDecimal psk,
+                     Boolean isInsuranceEnabled,
+                     Boolean isSalaryClient,
+                     List<PaymentScheduleElementDto> paymentSchedule) {
+        this.amount = amount;
+        this.term = term;
+        this.monthlyPayment = monthlyPayment;
+        this.rate = rate;
+        this.psk = psk;
+        this.isInsuranceEnabled = isInsuranceEnabled;
+        this.isSalaryClient = isSalaryClient;
+        this.paymentSchedule = paymentSchedule;
+    }
 }
